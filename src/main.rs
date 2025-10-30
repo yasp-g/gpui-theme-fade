@@ -1,8 +1,9 @@
 use anyhow::{anyhow, Result};
-use chrono::{Duration, Local, NaiveTime, Timelike};
+use chrono::{Duration, Local, NaiveTime};
+use futures::{channel::mpsc, StreamExt};
 use gpui::{
-    div, hsla, prelude::*, rgba, AppContext, Dispatcher, Global, Hsla, IntoElement, Pixels,
-    Render, Rgba, SharedString, View, WindowContext,
+    div, hsla, prelude::*, px, rgba, App, AsyncApp, Context, Global, Hsla, IntoElement, Render, Rgba,
+    SharedString, Window, Application,
 };
 use once_cell::sync::Lazy;
 use regex::Regex;
@@ -57,7 +58,7 @@ impl FromStr for Color {
             b: b as f32 / 255.0,
             a: a as f32 / 255.0,
         };
-        let hsla = rgba.to_hsla();
+        let hsla = Hsla::from(rgba);
         Ok(Color { rgba, hsla })
     }
 }
@@ -71,7 +72,7 @@ fn lerp_color(a: Color, b: Color, t: f32) -> Color {
         l: a.hsla.l + (b.hsla.l - a.hsla.l) * t,
         a: a.hsla.a + (b.hsla.a - a.hsla.a) * t,
     };
-    let rgba = hsla.to_rgba();
+    let rgba = Rgba::from(hsla);
     Color { rgba, hsla }
 }
 
@@ -114,7 +115,6 @@ struct ZedThemeFile {
 #[derive(Deserialize, Debug)]
 struct ThemeDefinition {
     name: String,
-    appearance: String,
     style: ThemeStyle,
 }
 
@@ -168,7 +168,7 @@ struct ActiveTheme(InterpolatableTheme);
 impl Global for ActiveTheme {}
 
 /// A simple function to update the global theme.
-fn set_active_theme(theme: InterpolatableTheme, cx: &mut AppContext) {
+fn set_active_theme(theme: InterpolatableTheme, cx: &mut App) {
     cx.update_global(|active_theme: &mut ActiveTheme, _| {
         active_theme.0 = theme;
         // `update_global` automatically notifies and triggers a re-render.
@@ -178,11 +178,9 @@ fn set_active_theme(theme: InterpolatableTheme, cx: &mut AppContext) {
 // --- 4. THEME SCHEDULER SERVICE ---
 
 /// This holds our schedule and the logic for the "daemon" thread.
-/// This logic is identical to the previous example, but the "Theme"
-/// type it passes around is now our `InterpolatableTheme`.
 struct ThemeScheduler {
     schedule: Arc<Vec<ScheduleEntry>>,
-    dispatcher: Dispatcher,
+    theme_sender: mpsc::Sender<InterpolatableTheme>,
 }
 
 #[derive(Clone)]
@@ -194,10 +192,13 @@ struct ScheduleEntry {
 
 impl ThemeScheduler {
     /// Spawns the scheduler on a new, detached background thread.
-    pub fn spawn(dispatcher: Dispatcher, schedule: Arc<Vec<ScheduleEntry>>) {
-        let scheduler = Self {
+    pub fn spawn(
+        theme_sender: mpsc::Sender<InterpolatableTheme>,
+        schedule: Arc<Vec<ScheduleEntry>>,
+    ) {
+        let mut scheduler = Self {
             schedule,
-            dispatcher,
+            theme_sender,
         };
         thread::spawn(move || {
             info!("ThemeScheduler: Background thread spawned.");
@@ -206,8 +207,7 @@ impl ThemeScheduler {
     }
 
     /// The main loop for our scheduler "daemon".
-    /// This logic is IDENTICAL to before, just with a new theme type.
-    fn run_loop(&self) {
+    fn run_loop(&mut self) {
         let mut current_theme_idx = self.find_previous_event_index(Local::now().time());
 
         loop {
@@ -215,7 +215,7 @@ impl ThemeScheduler {
             let now = Local::now().time();
             let prev_event = &self.schedule[current_theme_idx];
             let next_event_idx = (current_theme_idx + 1) % self.schedule.len();
-            let next_event = &self.schedule[next_event_idx];
+            let next_event = self.schedule[next_event_idx].clone();
 
             let current_theme = prev_event.theme.clone();
 
@@ -240,7 +240,7 @@ impl ThemeScheduler {
             } else if now < fade_end_time {
                 // --- STATE 2: FADING ---
                 info!("ThemeScheduler: Starting fade...");
-                self.run_fade_loop(&current_theme, next_event);
+                self.run_fade_loop(&current_theme, &next_event);
                 current_theme_idx = next_event_idx; // Update current theme index
                 continue; // Loop to enter Post-Fade state
             } else {
@@ -256,7 +256,7 @@ impl ThemeScheduler {
     }
 
     /// The "event-spam" loop that runs during a fade.
-    fn run_fade_loop(&self, start_theme: &InterpolatableTheme, target_event: &ScheduleEntry) {
+    fn run_fade_loop(&mut self, start_theme: &InterpolatableTheme, target_event: &ScheduleEntry) {
         let fade_start_time = target_event.time - target_event.fade_duration;
         let fade_end_time = target_event.time;
         let total_duration_ms = target_event.fade_duration.num_milliseconds() as f32;
@@ -271,7 +271,7 @@ impl ThemeScheduler {
 
             // This is our JIT "lerp_theme" call
             let interpolated_theme = lerp_theme(start_theme, &target_event.theme, t);
-            self.dispatch_theme_update(interpolatable_theme);
+            self.dispatch_theme_update(interpolated_theme);
 
             thread::sleep(StdDuration::from_millis(16)); // Target ~60fps
         }
@@ -291,12 +291,10 @@ impl ThemeScheduler {
     }
 
     /// Helper to send our theme update to the main UI thread.
-    fn dispatch_theme_update(&self, theme: InterpolatableTheme) {
-        self.dispatcher
-            .dispatch_global(Box::new(move |cx| {
-                set_active_theme(theme, cx);
-            }))
-            .ok();
+    fn dispatch_theme_update(&mut self, theme: InterpolatableTheme) {
+        if let Err(e) = self.theme_sender.try_send(theme) {
+            tracing::warn!("Failed to send theme update: {}", e);
+        }
     }
 }
 
@@ -305,7 +303,7 @@ impl ThemeScheduler {
 struct AppView;
 
 impl Render for AppView {
-    fn render(&mut self, cx: &mut WindowContext) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         // Read the *current* active theme (the HashMap) from the global context.
         let theme_map = &cx.global::<ActiveTheme>().0 .0;
 
@@ -341,28 +339,31 @@ impl Render for AppView {
             .bg(bg_color.rgba) // Use the .rgba field for GPUI
             .justify_center()
             .items_center()
-            .gap(Pixels(16.0))
+            .gap(px(16.0))
             .child(
                 div()
                     .text_color(text_color.rgba)
-                    .text_size(Pixels(32.0))
+                    .text_size(px(32.0))
                     .child("Theme Scheduler PoC"),
             )
             .child(
                 div()
-                    .px(Pixels(16.0))
-                    .py(Pixels(8.0))
+                    .px(px(16.0))
+                    .py(px(8.0))
                     .bg(button_bg.rgba)
-                    .border()
+                    .border_t(px(1.0))
+                    .border_b(px(1.0))
+                    .border_l(px(1.0))
+                    .border_r(px(1.0))
                     .border_color(accent_color.rgba) // Use accent for border
                     .text_color(button_text.rgba)
-                    .rounded(Pixels(6.0))
+                    .rounded(px(6.0))
                     .child("A Themed Button"),
             )
             .child(
                 div()
                     .text_color(text_color.rgba)
-                    .text_size(Pixels(14.0))
+                    .text_size(px(14.0))
                     .child(SharedString::from(format!(
                         "BG Lightness: {:.2}%",
                         bg_color.hsla.l * 100.0
@@ -377,7 +378,6 @@ fn main() {
         .init();
 
     // --- Parse our mock themes ---
-    // A real app would read these from files.
     let one_dark_json = fs::read_to_string("assets/one.json").expect("Failed to read one.json");
     let ayu_light_json = fs::read_to_string("assets/ayu.json").expect("Failed to read ayu.json");
 
@@ -386,7 +386,7 @@ fn main() {
     let ayu_light_theme =
         parse_zed_theme(&ayu_light_json, "Ayu Light").expect("Failed to parse Ayu Light");
 
-    gpui::App::new().run(move |cx: &mut AppContext| {
+    Application::new().run(move |cx: &mut App| {
         // --- This is our mock schedule ---
         let schedule = Arc::new(vec![
             ScheduleEntry {
@@ -395,8 +395,6 @@ fn main() {
                 fade_duration: Duration::seconds(300),
             },
             ScheduleEntry {
-                // For testing, let's set this 1 minute from now
-                // time: (Local::now() + Duration::minutes(1)).time(),
                 time: NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
                 theme: one_dark_theme.clone(),
                 fade_duration: Duration::seconds(600),
@@ -405,37 +403,57 @@ fn main() {
 
         // --- Find the correct initial theme ---
         let now = Local::now().time();
-        let scheduler_for_init = ThemeScheduler {
-            schedule: schedule.clone(),
-            dispatcher: cx.dispatcher(),
-        };
-        let prev_idx = scheduler_for_init.find_previous_event_index(now);
+        let prev_idx = find_previous_event_index(now, &schedule);
         let prev_event = &schedule[prev_idx];
         let next_event = &schedule[(prev_idx + 1) % schedule.len()];
 
         let initial_theme = {
             let fade_start = next_event.time - next_event.fade_duration;
             if now >= fade_start && now < next_event.time {
-                // We are mid-fade! Calculate the initial `t`.
                 let total_dur = next_event.fade_duration.num_milliseconds() as f32;
                 let elapsed = (now - fade_start).num_milliseconds() as f32;
                 let t = (elapsed / total_dur).clamp(0.0, 1.0);
                 info!("Main: Starting mid-fade (t = {}).", t);
                 lerp_theme(&prev_event.theme, &next_event.theme, t)
             } else {
-                // We are idle. Use the theme of the *previous* event.
                 info!("Main: Starting in idle state.");
                 prev_event.theme.clone()
             }
         };
 
         // Initialize the global with our calculated theme.
-        ActiveTheme::init(cx, ActiveTheme(initial_theme));
+        cx.set_global(ActiveTheme(initial_theme));
 
-        // Spawn the scheduler on its background thread.
-        ThemeScheduler::spawn(cx.dispatcher(), schedule);
+        // Spawn a task to manage the theme scheduling
+        cx.spawn(move |async_cx: &mut AsyncApp| {
+            let async_cx = async_cx.clone();
+            let schedule = schedule.clone();
+            async move {
+                let (theme_sender, mut theme_receiver) = mpsc::channel(32);
+
+                // Spawn the scheduler on its background thread.
+                ThemeScheduler::spawn(theme_sender, schedule);
+
+                // Listen for theme updates
+                while let Some(theme) = theme_receiver.next().await {
+                    async_cx.update(|cx| set_active_theme(theme, cx)).ok();
+                }
+            }
+        })
+        .detach();
 
         // Open the main window.
-        cx.open_window(Default::default(), |cx| View::new(cx, |_| AppView));
+        let _ = cx.open_window(Default::default(), |_, cx| cx.new(|_| AppView));
     });
+}
+
+/// Helper function to find the previous event index, moved out of ThemeScheduler
+fn find_previous_event_index(now: NaiveTime, schedule: &[ScheduleEntry]) -> usize {
+    schedule
+        .iter()
+        .enumerate()
+        .filter(|(_, e)| e.time <= now)
+        .last()
+        .map(|(i, _)| i)
+        .unwrap_or(schedule.len() - 1) // If it's before the first event, wrap to last
 }
