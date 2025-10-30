@@ -18,3 +18,8 @@ The primary goal of this application is to serve as a prototype for a potential 
 *   `src/main.rs`: Contains the entire application logic, including theme parsing, color interpolation, the theme scheduler, and the UI view.
 *   `Cargo.toml`: Defines the project dependencies, including `gpui`, `chrono`, `serde`, and other necessary crates.
 *   `GEMINI.md`: This file, providing a high-level overview of the project for easy future reference.
+
+## Development Notes
+
+*   **GPUI Source:** The source code for the version of GPUI used in this project has been cloned from Zed Industries' repository into `sandbox/gpui-source/gpui/` for reference.
+*   **Compilation:** The immediate focus is on achieving a successful compilation. Use `cargo build` to check for errors before attempting to run the application with `cargo run`.
