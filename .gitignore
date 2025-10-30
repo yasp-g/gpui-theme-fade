@@ -16,3 +16,5 @@ Thumbs.db
 # Crates.io registry cache
 .cargo/registry/
 .cargo/git/
+
+sandbox/
