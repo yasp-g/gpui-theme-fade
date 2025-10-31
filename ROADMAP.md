@@ -13,43 +13,43 @@ The current 24-hour scheduling simulation is not ideal for rapid testing. We wil
 
 ### Detailed Steps
 
-1.  **State Management (`AppState`)**
-    -   Modify the `AppState` struct in `src/main.rs`.
-    -   Add an `app_mode: AppMode` enum field. This enum will have two variants: `Scheduler` and `Interactive`.
-    -   Add a `themes: Vec<Theme>` field to store all available themes.
-    -   Add a `selected_theme_index: usize` field for the interactive mode's dropdown.
-    -   Add a `fade_duration_seconds: f32` field for the interactive mode's text input.
-    -   Add a `dropdown_open: bool` field to manage the visibility of the theme selector dropdown.
+- [ ] **State Management (`AppState`)**
+    - [ ] Modify the `AppState` struct in `src/main.rs`.
+    - [ ] Add an `app_mode: AppMode` enum field. This enum will have two variants: `Scheduler` and `Interactive`.
+    - [ ] Add a `themes: Vec<Theme>` field to store all available themes.
+    - [ ] Add a `selected_theme_index: usize` field for the interactive mode's dropdown.
+    - [ ] Add a `fade_duration_seconds: f32` field for the interactive mode's text input.
+    - [ ] Add a `dropdown_open: bool` field to manage the visibility of the theme selector dropdown.
 
-2.  **Logic Overhaul & Modularization**
-    -   **Create `scheduler` module:**
-        -   Create a new file: `src/scheduler.rs`.
-        -   Move the `ThemeScheduler` struct and its related implementation from `src/main.rs` into this new file.
-        -   Declare `pub mod scheduler;` in `src/main.rs`.
-    -   **Conditional Logic in `main`:**
-        -   In the `main` function, after initializing the `AppState`, check the value of `app_mode`.
-        -   If `app_mode` is `AppMode::Scheduler`, spawn the `ThemeScheduler` background task as the application currently does.
-        -   If `app_mode` is `AppMode::Interactive`, the `ThemeScheduler` will not be started.
+- [x] **Logic Overhaul & Modularization**
+    - [x] **Create `scheduler` module:**
+        - [x] Create a new file: `src/scheduler.rs`.
+        - [x] Move the `ThemeScheduler` struct and its related implementation from `src/main.rs` into this new file.
+        - [x] Declare `pub mod scheduler;` in `src/main.rs`.
+    - [ ] **Conditional Logic in `main`:**
+        - [ ] In the `main` function, after initializing the `AppState`, check the value of `app_mode`.
+        - [ ] If `app_mode` is `AppMode::Scheduler`, spawn the `ThemeScheduler` background task as the application currently does.
+        - [ ] If `app_mode` is `AppMode::Interactive`, the `ThemeScheduler` will not be started.
 
-3.  **Interactive UI (`AsyncApp::render`)**
-    -   The `render` method of the `AsyncApp` view will conditionally render the UI based on the `app_mode`.
-    -   If `app_mode` is `AppMode::Scheduler`, the view can remain as it is (or show a simple status).
-    -   If `app_mode` is `AppMode::Interactive`, render the following controls:
-        -   **Main Container:** A root `div` element.
-        -   **Current Theme Display:** A `text` element showing the name of the current base theme.
-        -   **Next Theme Selector (Dropdown):**
-            -   A clickable `div` to toggle the `dropdown_open` state.
-            -   A conditionally rendered `list` of available themes.
-            -   Each item in the list will be clickable to update `selected_theme_index`.
-        -   **Fade Duration Input (Custom `TextInput` view):**
-            -   Define a new `TextInput` struct with `text: String` and a `focus_handle: FocusHandle`.
-            -   Implement the `Render` trait to draw the text.
-            -   Implement the `EntityInputHandler` trait to handle text input from the keyboard.
-            -   Instantiate this view in `AsyncApp` and register it for input handling using `cx.handle_input()`.
-        -   **"Run Transition" Button:**
-            -   A clickable `div` with a `text` label.
-            -   The `on_click` handler will spawn a new `async` task.
-            -   This task will perform the theme fade using the `selected_theme_index` and `fade_duration_seconds` from the state.
+- [ ] **Interactive UI (`AsyncApp::render`)**
+    - [ ] The `render` method of the `AsyncApp` view will conditionally render the UI based on the `app_mode`.
+    - [ ] If `app_mode` is `AppMode::Scheduler`, the view can remain as it is (or show a simple status).
+    - [ ] If `app_mode` is `AppMode::Interactive`, render the following controls:
+        - [ ] **Main Container:** A root `div` element.
+        - [ ] **Current Theme Display:** A `text` element showing the name of the current base theme.
+        - [ ] **Next Theme Selector (Dropdown):**
+            - [ ] A clickable `div` to toggle the `dropdown_open` state.
+            - [ ] A conditionally rendered `list` of available themes.
+            - [ ] Each item in the list will be clickable to update `selected_theme_index`.
+        - [ ] **Fade Duration Input (Custom `TextInput` view):**
+            - [ ] Define a new `TextInput` struct with `text: String` and a `focus_handle: FocusHandle`.
+            - [ ] Implement the `Render` trait to draw the text.
+            - [ ] Implement the `EntityInputHandler` trait to handle text input from the keyboard.
+            - [ ] Instantiate this view in `AsyncApp` and register it for input handling using `cx.handle_input()`.
+        - [ ] **"Run Transition" Button:**
+            - [ ] A clickable `div` with a `text` label.
+            - [ ] The `on_click` handler will spawn a new `async` task.
+            - [ ] This task will perform the theme fade using the `selected_theme_index` and `fade_duration_seconds` from the state.
 
 
 ---
