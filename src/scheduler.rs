@@ -1,11 +1,13 @@
 use anyhow::{anyhow, Result};
 use chrono::{Duration, Local, NaiveTime};
 use futures::channel::mpsc;
-use gpui::{hsla, prelude::*, rgba, Hsla, Rgba};
+use gpui::{hsla, rgba, Hsla, Rgba};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use std::{collections::HashMap, str::FromStr, sync::Arc, thread, time::Duration as StdDuration};
 use tracing::info;
+
+use crate::AppMode; // New import
 
 // --- THEME & COLOR DEFINITIONS ---
 
@@ -90,6 +92,7 @@ pub fn lerp_theme(a: &InterpolatableTheme, b: &InterpolatableTheme, t: f32) -> I
 pub struct ThemeScheduler {
     schedule: Arc<Vec<ScheduleEntry>>,
     theme_sender: mpsc::Sender<InterpolatableTheme>,
+    app_mode: AppMode, // New field
 }
 
 #[derive(Clone)]
@@ -103,10 +106,12 @@ impl ThemeScheduler {
     pub fn spawn(
         theme_sender: mpsc::Sender<InterpolatableTheme>,
         schedule: Arc<Vec<ScheduleEntry>>,
+        app_mode: AppMode, // New parameter
     ) {
         let mut scheduler = Self {
             schedule,
             theme_sender,
+            app_mode, // Store the new parameter
         };
         thread::spawn(move || {
             info!("ThemeScheduler: Background thread spawned.");
@@ -144,12 +149,26 @@ impl ThemeScheduler {
                 info!("ThemeScheduler: Starting fade...");
                 self.run_fade_loop(&current_theme, &next_event);
                 current_theme_idx = next_event_idx;
+
+                // Conditional return for Interactive mode
+                if self.app_mode == crate::AppMode::Interactive {
+                    info!("ThemeScheduler: Interactive simulation complete. Exiting thread.");
+                    return;
+                }
+
                 continue;
             } else {
                 info!("ThemeScheduler: Setting final theme and finding next event.");
                 self.dispatch_theme_update(next_event.theme.clone());
                 current_theme_idx = next_event_idx;
                 thread::sleep(StdDuration::from_millis(1000));
+
+                // Conditional return for Interactive mode if it somehow gets here
+                if self.app_mode == crate::AppMode::Interactive {
+                    info!("ThemeScheduler: Interactive simulation complete (after catch-up). Exiting thread.");
+                    return;
+                }
+
                 continue;
             }
         }

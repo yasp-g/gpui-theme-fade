@@ -24,30 +24,39 @@ To achieve this, we will implement a one-shot simulation strategy:
 
 This approach allows us to use the real scheduler code in a controlled test environment.
 
+### Implementation Notes & Refinements
+
+During the initial refactoring, several unforeseen tasks were completed:
+
+- **`AppState` as a `Global`:** The application's state management was centralized by creating a new `AppState` struct. This struct was made a `gpui::Global`, replacing the previous, simpler `ActiveTheme` global. This provides a single source of truth for the UI.
+- **`Theme` Struct:** A new `Theme` struct was created to encapsulate a theme's name (`String`) and its `InterpolatableTheme` data. This is used in the `AppState.themes` vector.
+- **`Default` Trait Implementation:** To allow `AppState` to derive the `Default` trait, a manual `impl Default for AppMode` was added, setting `AppMode::Scheduler` as the default.
+- **Handling `Result` from `read_global`:** The `gpui::AsyncAppContext::read_global` function returns a `Result`. The implementation now correctly handles this by using `.expect()` to unwrap the value, ensuring that a failure to read the global state will result in a controlled panic.
+
 ### Detailed Steps
 
-- [ ] **State Management (`AppState`)**
-    - [ ] Modify the `AppState` struct in `src/main.rs`.
-    - [ ] Add an `app_mode: AppMode` enum field. This enum will have two variants: `Scheduler` and `Interactive`.
-    - [ ] Add a `themes: Vec<Theme>` field to store all available themes.
-    - [ ] Add a `selected_theme_index: usize` field for the interactive mode's dropdown.
-    - [ ] Add a `sleep_duration_seconds: f32` field for the simulation's sleep duration.
-    - [ ] Add a `fade_duration_seconds: f32` field for the simulation's fade duration.
-    - [ ] Add a `dropdown_open: bool` field to manage the visibility of the theme selector dropdown.
+- [x] **State Management (`AppState`)**
+    - [x] Modify the `AppState` struct in `src/main.rs`.
+    - [x] Add an `app_mode: AppMode` enum field. This enum will have two variants: `Scheduler` and `Interactive`.
+    - [x] Add a `themes: Vec<Theme>` field to store all available themes.
+    - [x] Add a `selected_theme_index: usize` field for the interactive mode's dropdown.
+    - [x] Add a `sleep_duration_seconds: f32` field for the simulation's sleep duration.
+    - [x] Add a `fade_duration_seconds: f32` field for the simulation's fade duration.
+    - [x] Add a `dropdown_open: bool` field to manage the visibility of the theme selector dropdown.
 
 - [x] **Logic Overhaul & Modularization**
     - [x] **Create `scheduler` module:**
         - [x] Create a new file: `src/scheduler.rs`.
         - [x] Move the `ThemeScheduler` struct and its related implementation from `src/main.rs` into this new file.
         - [x] Declare `pub mod scheduler;` in `src/main.rs`.
-    - [ ] **Scheduler Refinement:**
-        - [ ] Add `app_mode: AppMode` to the `ThemeScheduler` struct.
-        - [ ] Modify the `run_loop` to accept the `app_mode` and include a conditional `return` to exit the loop after one cycle in `Interactive` mode.
+    - [x] **Scheduler Refinement:**
+        - [x] Add `app_mode: AppMode` to the `ThemeScheduler` struct.
+        - [x] Modify the `run_loop` to accept the `app_mode` and include a conditional `return` to exit the loop after one cycle in `Interactive` mode.
 
-- [ ] **Conditional Logic in `main`:**
-    - [ ] In the `main` function, after initializing the `AppState`, check the value of `app_mode`.
-    - [ ] If `app_mode` is `AppMode::Scheduler`, spawn the `ThemeScheduler` background task to run continuously.
-    - [ ] If `app_mode` is `AppMode::Interactive`, the `ThemeScheduler` is **not** started automatically. It will be triggered on-demand by the UI.
+- [x] **Conditional Logic in `main`:**
+    - [x] In the `main` function, after initializing the `AppState`, check the value of `app_mode`.
+    - [x] If `app_mode` is `AppMode::Scheduler`, spawn the `ThemeScheduler` background task to run continuously.
+    - [x] If `app_mode` is `AppMode::Interactive`, the `ThemeScheduler` is **not** started automatically. It will be triggered on-demand by the UI.
 
 - [ ] **Interactive UI (`AsyncApp::render`)**
     - [ ] The `render` method will conditionally render the UI based on the `app_mode`.

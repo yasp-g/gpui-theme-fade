@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use chrono::{Duration, Local, NaiveTime};
 use futures::{channel::mpsc, StreamExt};
 use gpui::{
-    div, hsla, prelude::*, px, rgba, App, AsyncApp, Context, Global, Hsla, IntoElement, Render, Rgba,
+    div, prelude::*, px, App, AsyncApp, Context, Global, IntoElement, Render,
     SharedString, Window, Application,
 };
 use serde::Deserialize;
@@ -14,6 +14,26 @@ use scheduler::{
     find_previous_event_index, lerp_theme, Color, InterpolatableTheme, ScheduleEntry,
     ThemeScheduler,
 };
+
+// New enum for application mode
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum AppMode {
+    Scheduler,
+    Interactive,
+}
+
+impl Default for AppMode {
+    fn default() -> Self {
+        AppMode::Scheduler
+    }
+}
+
+// New struct to hold a theme and its name
+#[derive(Clone, Debug)]
+pub struct Theme {
+    pub name: String,
+    pub interpolatable_theme: InterpolatableTheme,
+}
 
 
 // --- 2. JSON PARSING STRUCTS ---
@@ -72,17 +92,25 @@ fn parse_zed_theme(json_data: &str, theme_name: &str) -> Result<InterpolatableTh
 
 // --- 3. GPUI GLOBAL STATE ---
 
-/// This is the global `ActiveTheme` that our UI will read from.
-/// It now holds our HashMap-based theme.
+/// This is the global `AppState` that our UI will read from and update.
 #[derive(Clone, Default, Debug)]
-struct ActiveTheme(InterpolatableTheme);
+pub struct AppState {
+    pub app_mode: AppMode,
+    pub themes: Vec<Theme>,
+    pub selected_theme_index: usize,
+    pub sleep_duration_seconds: f32,
+    pub fade_duration_seconds: f32,
+    pub dropdown_open: bool,
+    // The currently active theme, which the UI renders.
+    pub active_theme: InterpolatableTheme,
+}
 
-impl Global for ActiveTheme {}
+impl Global for AppState {}
 
-/// A simple function to update the global theme.
+/// A simple function to update the active theme within the global AppState.
 fn set_active_theme(theme: InterpolatableTheme, cx: &mut App) {
-    cx.update_global(|active_theme: &mut ActiveTheme, _| {
-        active_theme.0 = theme;
+    cx.update_global(|app_state: &mut AppState, _| {
+        app_state.active_theme = theme;
         // `update_global` automatically notifies and triggers a re-render.
     });
 }
@@ -95,7 +123,7 @@ struct AppView;
 impl Render for AppView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         // Read the *current* active theme (the HashMap) from the global context.
-        let theme_map = &cx.global::<ActiveTheme>().0 .0;
+        let theme_map = &cx.global::<AppState>().active_theme.0;
 
         // --- We now look up colors by their string key ---
         // We provide a `.unwrap_or_default()` as a fallback
@@ -191,13 +219,28 @@ fn main() {
             },
         ]);
 
-        // --- Find the correct initial theme ---
-        let now = Local::now().time();
-        let prev_idx = find_previous_event_index(now, &schedule);
-        let prev_event = &schedule[prev_idx];
-        let next_event = &schedule[(prev_idx + 1) % schedule.len()];
 
-        let initial_theme = {
+
+        // --- Initialize AppState ---
+        let app_mode = AppMode::Scheduler; // Default to Scheduler mode for now
+
+        let all_themes = vec![
+            Theme {
+                name: "One Dark".to_string(),
+                interpolatable_theme: one_dark_theme.clone(),
+            },
+            Theme {
+                name: "Ayu Light".to_string(),
+                interpolatable_theme: ayu_light_theme.clone(),
+            },
+        ];
+
+        let initial_active_theme = {
+            let now = Local::now().time();
+            let prev_idx = find_previous_event_index(now, &schedule);
+            let prev_event = &schedule[prev_idx];
+            let next_event = &schedule[(prev_idx + 1) % schedule.len()];
+
             let fade_start = next_event.time - next_event.fade_duration;
             if now >= fade_start && now < next_event.time {
                 let total_dur = next_event.fade_duration.num_milliseconds() as f32;
@@ -211,8 +254,15 @@ fn main() {
             }
         };
 
-        // Initialize the global with our calculated theme.
-        cx.set_global(ActiveTheme(initial_theme));
+        cx.set_global(AppState {
+            app_mode,
+            themes: all_themes,
+            selected_theme_index: 0, // Default to the first theme
+            sleep_duration_seconds: 5.0, // Default value
+            fade_duration_seconds: 5.0, // Default value
+            dropdown_open: false,
+            active_theme: initial_active_theme,
+        });
 
         // Spawn a task to manage the theme scheduling
         cx.spawn(move |async_cx: &mut AsyncApp| {
@@ -221,8 +271,13 @@ fn main() {
             async move {
                 let (theme_sender, mut theme_receiver) = mpsc::channel(32);
 
-                // Spawn the scheduler on its background thread.
-                ThemeScheduler::spawn(theme_sender, schedule);
+                // Get app_mode from the global AppState
+                let current_app_mode = async_cx.read_global::<AppState, _>(|app_state, _| app_state.app_mode).expect("Should be able to read AppState");
+
+                // Only spawn the scheduler if in Scheduler mode
+                if current_app_mode == AppMode::Scheduler {
+                    ThemeScheduler::spawn(theme_sender.clone(), schedule, current_app_mode);
+                }
 
                 // Listen for theme updates
                 while let Some(theme) = theme_receiver.next().await {
