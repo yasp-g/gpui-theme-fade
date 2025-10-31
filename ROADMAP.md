@@ -9,7 +9,20 @@
 
 ## Phase 2: Interactive Theme Tester UI
 
-The current 24-hour scheduling simulation is not ideal for rapid testing. We will build a user interface to control the theme transitions manually. This UI will serve as a development and testing mode, while the core time-based scheduler functionality will be preserved.
+The current 24-hour scheduling simulation is not ideal for rapid testing. We will build a user interface to control and trigger the theme scheduler's logic manually. This UI will serve as a development and testing mode for the core scheduling engine.
+
+### Design & Simulation Strategy
+
+After discussion, the primary goal of the interactive UI has been clarified: **to test and validate the existing `ThemeScheduler` logic** in an accelerated, on-demand fashion, rather than creating a parallel implementation of the fade.
+
+To achieve this, we will implement a one-shot simulation strategy:
+
+1.  **Full Simulation:** The UI will provide inputs for `sleep_duration` and `fade_duration` to allow for a full simulation of the `ThemeScheduler::run_loop`, including both the initial sleep/wait phase and the active fade phase.
+2.  **On-Demand Execution:** When the "Run Simulation" button is clicked, the application will spawn a new, temporary thread to run a single simulation.
+3.  **Dynamic Schedule:** Inside this thread, a temporary two-event `schedule` will be created based on the current theme and the UI inputs.
+4.  **Scheduler Modification:** The `ThemeScheduler` will be made aware of the `AppMode`. Its `run_loop` will be slightly modified to check for `AppMode::Interactive`. If this mode is detected, the loop will execute one full cycle (sleep and fade) and then `return`, cleanly terminating the simulation thread.
+
+This approach allows us to use the real scheduler code in a controlled test environment.
 
 ### Detailed Steps
 
@@ -18,7 +31,8 @@ The current 24-hour scheduling simulation is not ideal for rapid testing. We wil
     - [ ] Add an `app_mode: AppMode` enum field. This enum will have two variants: `Scheduler` and `Interactive`.
     - [ ] Add a `themes: Vec<Theme>` field to store all available themes.
     - [ ] Add a `selected_theme_index: usize` field for the interactive mode's dropdown.
-    - [ ] Add a `fade_duration_seconds: f32` field for the interactive mode's text input.
+    - [ ] Add a `sleep_duration_seconds: f32` field for the simulation's sleep duration.
+    - [ ] Add a `fade_duration_seconds: f32` field for the simulation's fade duration.
     - [ ] Add a `dropdown_open: bool` field to manage the visibility of the theme selector dropdown.
 
 - [x] **Logic Overhaul & Modularization**
@@ -26,13 +40,17 @@ The current 24-hour scheduling simulation is not ideal for rapid testing. We wil
         - [x] Create a new file: `src/scheduler.rs`.
         - [x] Move the `ThemeScheduler` struct and its related implementation from `src/main.rs` into this new file.
         - [x] Declare `pub mod scheduler;` in `src/main.rs`.
-    - [ ] **Conditional Logic in `main`:**
-        - [ ] In the `main` function, after initializing the `AppState`, check the value of `app_mode`.
-        - [ ] If `app_mode` is `AppMode::Scheduler`, spawn the `ThemeScheduler` background task as the application currently does.
-        - [ ] If `app_mode` is `AppMode::Interactive`, the `ThemeScheduler` will not be started.
+    - [ ] **Scheduler Refinement:**
+        - [ ] Add `app_mode: AppMode` to the `ThemeScheduler` struct.
+        - [ ] Modify the `run_loop` to accept the `app_mode` and include a conditional `return` to exit the loop after one cycle in `Interactive` mode.
+
+- [ ] **Conditional Logic in `main`:**
+    - [ ] In the `main` function, after initializing the `AppState`, check the value of `app_mode`.
+    - [ ] If `app_mode` is `AppMode::Scheduler`, spawn the `ThemeScheduler` background task to run continuously.
+    - [ ] If `app_mode` is `AppMode::Interactive`, the `ThemeScheduler` is **not** started automatically. It will be triggered on-demand by the UI.
 
 - [ ] **Interactive UI (`AsyncApp::render`)**
-    - [ ] The `render` method of the `AsyncApp` view will conditionally render the UI based on the `app_mode`.
+    - [ ] The `render` method will conditionally render the UI based on the `app_mode`.
     - [ ] If `app_mode` is `AppMode::Scheduler`, the view can remain as it is (or show a simple status).
     - [ ] If `app_mode` is `AppMode::Interactive`, render the following controls:
         - [ ] **Main Container:** A root `div` element.
@@ -41,15 +59,11 @@ The current 24-hour scheduling simulation is not ideal for rapid testing. We wil
             - [ ] A clickable `div` to toggle the `dropdown_open` state.
             - [ ] A conditionally rendered `list` of available themes.
             - [ ] Each item in the list will be clickable to update `selected_theme_index`.
-        - [ ] **Fade Duration Input (Custom `TextInput` view):**
-            - [ ] Define a new `TextInput` struct with `text: String` and a `focus_handle: FocusHandle`.
-            - [ ] Implement the `Render` trait to draw the text.
-            - [ ] Implement the `EntityInputHandler` trait to handle text input from the keyboard.
-            - [ ] Instantiate this view in `AsyncApp` and register it for input handling using `cx.handle_input()`.
-        - [ ] **"Run Transition" Button:**
+        - [ ] **Sleep Duration Input:** A `TextInput` view for `sleep_duration_seconds`.
+        - [ ] **Fade Duration Input:** A `TextInput` view for `fade_duration_seconds`.
+        - [ ] **"Run Simulation" Button:**
             - [ ] A clickable `div` with a `text` label.
-            - [ ] The `on_click` handler will spawn a new `async` task.
-            - [ ] This task will perform the theme fade using the `selected_theme_index` and `fade_duration_seconds` from the state.
+            - [ ] The `on_click` handler will spawn a new thread to run the one-shot simulation as described in the "Design & Simulation Strategy" section.
 
 
 ---
