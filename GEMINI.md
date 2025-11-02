@@ -27,5 +27,6 @@ The primary goal of this application is to develop and showcase a theme scheduli
 
 ## Development Notes
 
-- **GPUI Source:** The source code for the version of GPUI used in this project has been cloned from Zed Industries' repository into `sandbox/gpui-source/gpui/` for reference.
-- **Compilation:** The immediate focus is on achieving a successful compilation. Use `cargo build` to check for errors before attempting to run the application with `cargo run`.
+- **GPUI Source:** The source code for the version of GPUI used in this project has been cloned from Zed Industries' repository into `sandbox/gpui-source/gpui/`. Reference this source code for understanding the `gpui` framework's internals when developing new features or debugging compiler issues.
+- **Compilation:** The immediate focus is on achieving a successful compilation. Use `cargo build` to check for errors
+  - Never call `cargo run` directly. Instead instruct the user to when you feel it is appropriate.
