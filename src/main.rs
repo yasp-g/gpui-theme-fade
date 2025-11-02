@@ -1,15 +1,16 @@
 use anyhow::{anyhow, Result};
-use chrono::{Duration, Local, NaiveTime};
-use futures::{channel::mpsc, StreamExt};
+use chrono::{Duration as ChronoDuration, Local, NaiveTime};
 use gpui::{
-    div, prelude::*, px, App, AsyncApp, Context, Global, IntoElement, Render,
-    SharedString, Window, Application,
+    div, prelude::*, App, AppContext, AsyncApp, Context, Global, IntoElement, Render,
+    Window, Application,
 };
 use serde::Deserialize;
 use std::{collections::HashMap, fs, str::FromStr, sync::Arc};
+use futures::{channel::mpsc, StreamExt};
 use tracing::info;
 
 pub mod scheduler;
+pub mod ui;
 use scheduler::{
     find_previous_event_index, lerp_theme, Color, InterpolatableTheme, ScheduleEntry,
     ThemeScheduler,
@@ -59,7 +60,7 @@ struct ThemeStyle {
 
 /// A helper function to parse a JSON string and extract one
 /// `InterpolatableTheme` (e.g., "One Dark").
-fn parse_zed_theme(json_data: &str, theme_name: &str) -> Result<InterpolatableTheme> {
+fn parse_zed_theme(json_data: &str, theme_name: &str) -> Result<InterpolatableTheme, anyhow::Error> {
     let theme_file: ZedThemeFile = serde_json::from_str(json_data)?;
 
     let theme_def = theme_file
@@ -108,7 +109,7 @@ pub struct AppState {
 impl Global for AppState {}
 
 /// A simple function to update the active theme within the global AppState.
-fn set_active_theme(theme: InterpolatableTheme, cx: &mut App) {
+fn set_active_theme<T: AppContext + gpui::BorrowAppContext>(theme: InterpolatableTheme, cx: &mut T) {
     cx.update_global(|app_state: &mut AppState, _| {
         app_state.active_theme = theme;
         // `update_global` automatically notifies and triggers a re-render.
@@ -118,75 +119,24 @@ fn set_active_theme(theme: InterpolatableTheme, cx: &mut App) {
 
 // --- 5. THE MAIN UI VIEW (REFACTORED) ---
 
-struct AppView;
+pub struct AppView;
 
 impl Render for AppView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        // Read the *current* active theme (the HashMap) from the global context.
-        let theme_map = &cx.global::<AppState>().active_theme.0;
+        let app_state = cx.global::<AppState>().clone();
 
-        // --- We now look up colors by their string key ---
-        // We provide a `.unwrap_or_default()` as a fallback
-        // in case a theme is missing a key.
-        let bg_color = theme_map
-            .get("surface.background")
-            .cloned()
-            .unwrap_or_default();
-        let text_color = theme_map
-            .get("text") // "text" is a common key
-            .cloned()
-            .unwrap_or_default();
-        let accent_color = theme_map
-            .get("border.focused") // Use a more interesting color
-            .cloned()
-            .unwrap_or_default();
-        let button_bg = theme_map
-            .get("element.background")
-            .cloned()
-            .unwrap_or_default();
-        let button_text = theme_map
-            .get("text")
-            .cloned()
-            .unwrap_or_default();
-
-
-        div()
-            .flex()
-            .flex_col()
-            .size_full()
-            .bg(bg_color.rgba) // Use the .rgba field for GPUI
-            .justify_center()
-            .items_center()
-            .gap(px(16.0))
-            .child(
-                div()
-                    .text_color(text_color.rgba)
-                    .text_size(px(32.0))
-                    .child("Theme Scheduler PoC"),
-            )
-            .child(
-                div()
-                    .px(px(16.0))
-                    .py(px(8.0))
-                    .bg(button_bg.rgba)
-                    .border_t(px(1.0))
-                    .border_b(px(1.0))
-                    .border_l(px(1.0))
-                    .border_r(px(1.0))
-                    .border_color(accent_color.rgba) // Use accent for border
-                    .text_color(button_text.rgba)
-                    .rounded(px(6.0))
-                    .child("A Themed Button"),
-            )
-            .child(
-                div()
-                    .text_color(text_color.rgba)
-                    .text_size(px(14.0))
-                    .child(SharedString::from(format!(
-                        "BG Lightness: {:.2}%",
-                        bg_color.hsla.l * 100.0
-                    ))),
-            )
+        match app_state.app_mode {
+            AppMode::Scheduler => div()
+                .flex()
+                .size_full()
+                .justify_center()
+                .items_center()
+                .bg(app_state.active_theme.0.get("surface.background").expect("Theme missing surface.background").hsla)
+                .text_color(app_state.active_theme.0.get("text").expect("Theme missing text color").hsla)
+                .child(format!("Current Theme: {}", app_state.themes[app_state.selected_theme_index].name))
+                .into_any_element(),
+            AppMode::Interactive => ui::render_interactive_ui(&app_state, cx).into_any_element(),
+        }
     }
 }
 
@@ -210,19 +160,19 @@ fn main() {
             ScheduleEntry {
                 time: NaiveTime::from_hms_opt(7, 0, 0).unwrap(),
                 theme: ayu_light_theme.clone(),
-                fade_duration: Duration::seconds(300),
+                fade_duration: ChronoDuration::seconds(300),
             },
             ScheduleEntry {
                 time: NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
                 theme: one_dark_theme.clone(),
-                fade_duration: Duration::seconds(600),
+                fade_duration: ChronoDuration::seconds(600),
             },
         ]);
 
 
 
         // --- Initialize AppState ---
-        let app_mode = AppMode::Scheduler; // Default to Scheduler mode for now
+        let app_mode = AppMode::Interactive; // Default to Interactive mode for now
 
         let all_themes = vec![
             Theme {
