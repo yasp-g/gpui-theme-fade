@@ -1,5 +1,5 @@
 use gpui::{div, hsla, prelude::*, rems, Context, Div, IntoElement};
-use crate::{RunSimulation, SelectTheme, Theme, ToggleDropdown};
+use crate::{SelectTheme, Theme, ToggleDropdown};
 
 // This helper function does NOT need cx, because the on_click handler provides its own.
 fn render_theme_selection_dropdown(
@@ -32,7 +32,10 @@ fn render_theme_selection_dropdown(
         }))
 }
 
-pub fn render_interactive_ui(cx: &mut Context<crate::AppView>) -> impl IntoElement {
+pub fn render_interactive_ui(
+    _view: &mut crate::AppView,
+    cx: &mut Context<crate::AppView>,
+) -> impl IntoElement {
     let app_state = cx.global::<crate::AppState>().clone();
     let active_theme = &app_state.active_theme;
     let surface_background = active_theme.0.get("surface.background").unwrap().hsla;
@@ -148,9 +151,9 @@ pub fn render_interactive_ui(cx: &mut Context<crate::AppView>) -> impl IntoEleme
                                 .rounded_md()
                                 .text_center()
                                 .hover(|style| style.bg(hsla(0., 0., 1., 0.1)))
-                                .on_click(|_, _, cx| {
-                                    cx.dispatch_action(&RunSimulation);
-                                })
+                                .on_click(cx.listener(|view, _, _, cx| {
+                                    view.run_simulation(cx);
+                                }))
                                 .child("Run Simulation"),
                         ),
                 )

@@ -29,9 +29,6 @@ pub struct SelectTheme {
 }
 
 #[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
-pub struct RunSimulation;
-
-#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
 pub struct SetSleepDuration {
     pub seconds: f32,
 }
@@ -152,6 +149,87 @@ fn set_active_theme<T: AppContext + gpui::BorrowAppContext>(
 
 pub struct AppView;
 
+impl AppView {
+    fn run_simulation(&mut self, cx: &mut Context<Self>) {
+        // First, get the entity handles from the global state.
+        let (sleep_input_handle, fade_input_handle, current_theme, next_theme) = cx
+            .read_global(|app_state: &AppState, _| {
+                let current_theme_index =
+                    (app_state.selected_theme_index + 1) % app_state.themes.len();
+                (
+                    app_state.sleep_duration_input.clone(),
+                    app_state.fade_duration_input.clone(),
+                    app_state.themes[current_theme_index]
+                        .interpolatable_theme
+                        .clone(),
+                    app_state.themes[app_state.selected_theme_index]
+                        .interpolatable_theme
+                        .clone(),
+                )
+            });
+
+        // Now, use the window context `cx` to read the entity state.
+        let sleep_content = sleep_input_handle.read(cx).content.clone();
+        let fade_content = fade_input_handle.read(cx).content.clone();
+
+        // Perform validation.
+        let sleep_seconds = sleep_content.parse::<f32>();
+        let fade_seconds = fade_content.parse::<f32>();
+
+        let sleep_is_valid = sleep_seconds.is_ok();
+        let fade_is_valid = fade_seconds.is_ok();
+
+        // Update the validity flags in AppState.
+        cx.update_global(|app_state: &mut AppState, _| {
+            app_state.sleep_input_is_valid = sleep_is_valid;
+            app_state.fade_input_is_valid = fade_is_valid;
+        });
+
+        // Only run the simulation if both inputs are valid.
+        if let (Ok(sleep), Ok(fade)) = (sleep_seconds, fade_seconds) {
+            let sleep_duration = ChronoDuration::seconds(sleep as i64);
+            let fade_duration = ChronoDuration::seconds(fade as i64);
+
+            cx.spawn(move |_, async_cx: &mut AsyncApp| {
+                let async_cx = async_cx.clone();
+                async move {
+                    let (theme_sender, mut theme_receiver) = mpsc::channel(32);
+
+                    let now = Local::now().time();
+                    let sim_schedule = Arc::new(vec![
+                        ScheduleEntry {
+                            time: now,
+                            theme: current_theme.clone(),
+                            fade_duration: ChronoDuration::seconds(0),
+                        },
+                        ScheduleEntry {
+                            time: now + sleep_duration + fade_duration,
+                            theme: next_theme.clone(),
+                            fade_duration,
+                        },
+                    ]);
+
+                    ThemeScheduler::spawn(
+                        theme_sender.clone(),
+                        sim_schedule,
+                        AppMode::Interactive,
+                    );
+
+                    while let Some(theme) = theme_receiver.next().await {
+                        async_cx.update(|cx| set_active_theme(theme, cx)).ok();
+                    }
+                    info!("Simulation finished and channel closed.");
+                }
+            })
+            .detach();
+        }
+    }
+
+    fn render_interactive_ui(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
+        ui::render_interactive_ui(self, cx)
+    }
+}
+
 impl Render for AppView {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let app_state = cx.global::<AppState>().clone();
@@ -181,7 +259,7 @@ impl Render for AppView {
                     app_state.themes[app_state.selected_theme_index].name
                 ))
                 .into_any_element(),
-            AppMode::Interactive => ui::render_interactive_ui(cx).into_any_element(),
+            AppMode::Interactive => self.render_interactive_ui(cx).into_any_element(),
         }
     }
 }
@@ -310,82 +388,7 @@ fn main() {
             });
         });
 
-        cx.on_action(|_: &RunSimulation, cx: &mut App| {
-            // First, get the entity handles from the global state.
-            let (sleep_input_handle, fade_input_handle, current_theme, next_theme) =
-                cx.read_global(|app_state: &AppState, _| {
-                    let current_theme_index =
-                        (app_state.selected_theme_index + 1) % app_state.themes.len();
-                    (
-                        app_state.sleep_duration_input.clone(),
-                        app_state.fade_duration_input.clone(),
-                        app_state.themes[current_theme_index]
-                            .interpolatable_theme
-                            .clone(),
-                        app_state.themes[app_state.selected_theme_index]
-                            .interpolatable_theme
-                            .clone(),
-                    )
-                });
-
-            // Now, use the window context `cx` to read the entity state.
-            let sleep_content = sleep_input_handle.read(cx).content.clone();
-            let fade_content = fade_input_handle.read(cx).content.clone();
-
-            // Perform validation.
-            let sleep_seconds = sleep_content.parse::<f32>();
-            let fade_seconds = fade_content.parse::<f32>();
-
-            let sleep_is_valid = sleep_seconds.is_ok();
-            let fade_is_valid = fade_seconds.is_ok();
-
-            // Update the validity flags in AppState.
-            cx.update_global(|app_state: &mut AppState, _| {
-                app_state.sleep_input_is_valid = sleep_is_valid;
-                app_state.fade_input_is_valid = fade_is_valid;
-            });
-
-            // Only run the simulation if both inputs are valid.
-            if let (Ok(sleep), Ok(fade)) = (sleep_seconds, fade_seconds) {
-                let sleep_duration = ChronoDuration::seconds(sleep as i64);
-                let fade_duration = ChronoDuration::seconds(fade as i64);
-
-                cx.spawn(move |async_cx: &mut AsyncApp| {
-                    let async_cx = async_cx.clone();
-                    async move {
-                        let (theme_sender, mut theme_receiver) = mpsc::channel(32);
-
-                        let now = Local::now().time();
-                        let sim_schedule = Arc::new(vec![
-                            ScheduleEntry {
-                                time: now,
-                                theme: current_theme.clone(),
-                                fade_duration: ChronoDuration::seconds(0),
-                            },
-                            ScheduleEntry {
-                                time: now + sleep_duration + fade_duration,
-                                theme: next_theme.clone(),
-                                fade_duration,
-                            },
-                        ]);
-
-                        ThemeScheduler::spawn(
-                            theme_sender.clone(),
-                            sim_schedule,
-                            AppMode::Interactive,
-                        );
-
-                        while let Some(theme) = theme_receiver.next().await {
-                            async_cx.update(|cx| set_active_theme(theme, cx)).ok();
-                        }
-                        info!("Simulation finished and channel closed.");
-                    }
-                })
-                .detach();
-            }
-        });
-
-        // Spawn a task to manage the theme scheduling
+        // --- Open Window and Set Window-Specific Handlers ---
         cx.spawn(move |async_cx: &mut AsyncApp| {
             let async_cx = async_cx.clone();
             let schedule = schedule.clone();
@@ -411,6 +414,6 @@ fn main() {
         .detach();
 
         // Open the main window.
-        let _ = cx.open_window(Default::default(), |_, cx| cx.new(|_| AppView));
+        let _ = cx.open_window(Default::default(), |_, cx| cx.new(|_| AppView)).unwrap();
     });
 }
