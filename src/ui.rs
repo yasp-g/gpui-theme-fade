@@ -108,7 +108,7 @@ pub fn render_interactive_ui(cx: &mut Context<crate::AppView>) -> impl IntoEleme
                                 .justify_between()
                                 .items_center()
                                 .child(div().child("Sleep Duration (s):"))
-                                .child(app_state.sleep_duration_input.clone()),
+                                .child(div().w(rems(12.0)).child(app_state.sleep_duration_input.clone())),
                         )
                         .child(
                             div()
@@ -117,7 +117,7 @@ pub fn render_interactive_ui(cx: &mut Context<crate::AppView>) -> impl IntoEleme
                                 .justify_between()
                                 .items_center()
                                 .child(div().child("Fade Duration (s):"))
-                                .child(app_state.fade_duration_input.clone()),
+                                .child(div().w(rems(12.0)).child(app_state.fade_duration_input.clone())),
                         )
                         .child(
                             div()
