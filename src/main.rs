@@ -1,20 +1,42 @@
 use anyhow::{anyhow, Result};
 use chrono::{Duration as ChronoDuration, Local, NaiveTime};
-use gpui::{
-    div, prelude::*, App, AppContext, AsyncApp, Context, Global, IntoElement, Render,
-    Window, Application,
-};
+use futures::{channel::mpsc, StreamExt};
+use gpui::{div, prelude::*, Action, App, AppContext, Application, AsyncApp, Context, Entity, Global, IntoElement, Render, Window};
+use schemars::JsonSchema;
 use serde::Deserialize;
 use std::{collections::HashMap, fs, str::FromStr, sync::Arc};
-use futures::{channel::mpsc, StreamExt};
 use tracing::info;
 
 pub mod scheduler;
+pub mod text_input;
 pub mod ui;
 use scheduler::{
     find_previous_event_index, lerp_theme, Color, InterpolatableTheme, ScheduleEntry,
     ThemeScheduler,
 };
+use text_input::TextInput;
+
+// --- 1. ACTIONS ---
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
+pub struct ToggleDropdown;
+
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
+pub struct SelectTheme {
+    pub theme_index: usize,
+}
+
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
+pub struct RunSimulation;
+
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
+pub struct SetSleepDuration {
+    pub seconds: f32,
+}
+
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
+pub struct SetFadeDuration {
+    pub seconds: f32,
+}
 
 // New enum for application mode
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -35,7 +57,6 @@ pub struct Theme {
     pub name: String,
     pub interpolatable_theme: InterpolatableTheme,
 }
-
 
 // --- 2. JSON PARSING STRUCTS ---
 
@@ -60,7 +81,10 @@ struct ThemeStyle {
 
 /// A helper function to parse a JSON string and extract one
 /// `InterpolatableTheme` (e.g., "One Dark").
-fn parse_zed_theme(json_data: &str, theme_name: &str) -> Result<InterpolatableTheme, anyhow::Error> {
+fn parse_zed_theme(
+    json_data: &str,
+    theme_name: &str,
+) -> Result<InterpolatableTheme, anyhow::Error> {
     let theme_file: ZedThemeFile = serde_json::from_str(json_data)?;
 
     let theme_def = theme_file
@@ -94,13 +118,13 @@ fn parse_zed_theme(json_data: &str, theme_name: &str) -> Result<InterpolatableTh
 // --- 3. GPUI GLOBAL STATE ---
 
 /// This is the global `AppState` that our UI will read from and update.
-#[derive(Clone, Default, Debug)]
+#[derive(Clone)]
 pub struct AppState {
     pub app_mode: AppMode,
     pub themes: Vec<Theme>,
     pub selected_theme_index: usize,
-    pub sleep_duration_seconds: f32,
-    pub fade_duration_seconds: f32,
+    pub sleep_duration_input: Entity<TextInput>,
+    pub fade_duration_input: Entity<TextInput>,
     pub dropdown_open: bool,
     // The currently active theme, which the UI renders.
     pub active_theme: InterpolatableTheme,
@@ -109,13 +133,15 @@ pub struct AppState {
 impl Global for AppState {}
 
 /// A simple function to update the active theme within the global AppState.
-fn set_active_theme<T: AppContext + gpui::BorrowAppContext>(theme: InterpolatableTheme, cx: &mut T) {
+fn set_active_theme<T: AppContext + gpui::BorrowAppContext>(
+    theme: InterpolatableTheme,
+    cx: &mut T,
+) {
     cx.update_global(|app_state: &mut AppState, _| {
         app_state.active_theme = theme;
         // `update_global` automatically notifies and triggers a re-render.
     });
 }
-
 
 // --- 5. THE MAIN UI VIEW (REFACTORED) ---
 
@@ -131,88 +157,231 @@ impl Render for AppView {
                 .size_full()
                 .justify_center()
                 .items_center()
-                .bg(app_state.active_theme.0.get("surface.background").expect("Theme missing surface.background").hsla)
-                .text_color(app_state.active_theme.0.get("text").expect("Theme missing text color").hsla)
-                .child(format!("Current Theme: {}", app_state.themes[app_state.selected_theme_index].name))
+                .bg(app_state
+                    .active_theme
+                    .0
+                    .get("surface.background")
+                    .expect("Theme missing surface.background")
+                    .hsla)
+                .text_color(
+                    app_state
+                        .active_theme
+                        .0
+                        .get("text")
+                        .expect("Theme missing text color")
+                        .hsla,
+                )
+                .child(format!(
+                    "Current Theme: {}",
+                    app_state.themes[app_state.selected_theme_index].name
+                ))
                 .into_any_element(),
-            AppMode::Interactive => ui::render_interactive_ui(&app_state, cx).into_any_element(),
-        }
-    }
-}
-
-fn main() {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .init();
-
-    // --- Parse our mock themes ---
-    let one_dark_json = fs::read_to_string("assets/one.json").expect("Failed to read one.json");
-    let ayu_light_json = fs::read_to_string("assets/ayu.json").expect("Failed to read ayu.json");
-
-    let one_dark_theme =
-        parse_zed_theme(&one_dark_json, "One Dark").expect("Failed to parse One Dark");
-    let ayu_light_theme =
-        parse_zed_theme(&ayu_light_json, "Ayu Light").expect("Failed to parse Ayu Light");
-
-    Application::new().run(move |cx: &mut App| {
-        // --- This is our mock schedule ---
-        let schedule = Arc::new(vec![
-            ScheduleEntry {
-                time: NaiveTime::from_hms_opt(7, 0, 0).unwrap(),
-                theme: ayu_light_theme.clone(),
-                fade_duration: ChronoDuration::seconds(300),
-            },
-            ScheduleEntry {
-                time: NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
-                theme: one_dark_theme.clone(),
-                fade_duration: ChronoDuration::seconds(600),
-            },
-        ]);
-
-
-
-        // --- Initialize AppState ---
-        let app_mode = AppMode::Interactive; // Default to Interactive mode for now
-
-        let all_themes = vec![
-            Theme {
-                name: "One Dark".to_string(),
-                interpolatable_theme: one_dark_theme.clone(),
-            },
-            Theme {
-                name: "Ayu Light".to_string(),
-                interpolatable_theme: ayu_light_theme.clone(),
-            },
-        ];
-
-        let initial_active_theme = {
-            let now = Local::now().time();
-            let prev_idx = find_previous_event_index(now, &schedule);
-            let prev_event = &schedule[prev_idx];
-            let next_event = &schedule[(prev_idx + 1) % schedule.len()];
-
-            let fade_start = next_event.time - next_event.fade_duration;
-            if now >= fade_start && now < next_event.time {
-                let total_dur = next_event.fade_duration.num_milliseconds() as f32;
-                let elapsed = (now - fade_start).num_milliseconds() as f32;
-                let t = (elapsed / total_dur).clamp(0.0, 1.0);
-                info!("Main: Starting mid-fade (t = {}).", t);
-                lerp_theme(&prev_event.theme, &next_event.theme, t)
-            } else {
-                info!("Main: Starting in idle state.");
-                prev_event.theme.clone()
+                        AppMode::Interactive => ui::render_interactive_ui(cx).into_any_element(),
+                    }
+                }
             }
-        };
+            
+            fn main() {
+                tracing_subscriber::fmt()
+                    .with_max_level(tracing::Level::INFO)
+                    .init();
+            
+                // --- Parse our mock themes ---
+                let one_dark_json = fs::read_to_string("assets/one.json").expect("Failed to read one.json");
+                let ayu_light_json = fs::read_to_string("assets/ayu.json").expect("Failed to read ayu.json");
+            
+                let one_dark_theme =
+                    parse_zed_theme(&one_dark_json, "One Dark").expect("Failed to parse One Dark");
+                let ayu_light_theme =
+                    parse_zed_theme(&ayu_light_json, "Ayu Light").expect("Failed to parse Ayu Light");
+            
+                Application::new().run(move |cx: &mut App| {
+                    // --- This is our mock schedule ---
+                    let schedule = Arc::new(vec![
+                        ScheduleEntry {
+                            time: NaiveTime::from_hms_opt(7, 0, 0).unwrap(),
+                            theme: ayu_light_theme.clone(),
+                            fade_duration: ChronoDuration::seconds(300),
+                        },
+                        ScheduleEntry {
+                            time: NaiveTime::from_hms_opt(17, 0, 0).unwrap(),
+                            theme: one_dark_theme.clone(),
+                            fade_duration: ChronoDuration::seconds(600),
+                        },
+                    ]);
+            
+                    // --- Initialize AppState ---
+                    let app_mode = AppMode::Interactive; // Default to Interactive mode for now
+            
+                    let all_themes = vec![
+                        Theme {
+                            name: "One Dark".to_string(),
+                            interpolatable_theme: one_dark_theme.clone(),
+                        },
+                        Theme {
+                            name: "Ayu Light".to_string(),
+                            interpolatable_theme: ayu_light_theme.clone(),
+                        },
+                    ];
+            
+                    let initial_active_theme = {
+                        let now = Local::now().time();
+                        let prev_idx = find_previous_event_index(now, &schedule);
+                        let prev_event = &schedule[prev_idx];
+                        let next_event = &schedule[(prev_idx + 1) % schedule.len()];
+            
+                        let fade_start = next_event.time - next_event.fade_duration;
+                        if now >= fade_start && now < next_event.time {
+                            let total_dur = next_event.fade_duration.num_milliseconds() as f32;
+                            let elapsed = (now - fade_start).num_milliseconds() as f32;
+                            let t = (elapsed / total_dur).clamp(0.0, 1.0);
+                            info!("Main: Starting mid-fade (t = {}).", t);
+                            lerp_theme(&prev_event.theme, &next_event.theme, t)
+                        } else {
+                            info!("Main: Starting in idle state.");
+                            prev_event.theme.clone()
+                        }
+                    };
+            
+                    let sleep_duration_input = cx.new(|cx| TextInput {
+                        focus_handle: cx.focus_handle(),
+                        content: "5.0".into(),
+                        placeholder: "Sleep seconds...".into(),
+                        selected_range: 0..0,
+                        selection_reversed: false,
+                        marked_range: None,
+                        last_layout: None,
+                        last_bounds: None,
+                        is_selecting: false,
+                    });
+            
+                    let fade_duration_input = cx.new(|cx| TextInput {
+                        focus_handle: cx.focus_handle(),
+                        content: "5.0".into(),
+                        placeholder: "Fade seconds...".into(),
+                        selected_range: 0..0,
+                        selection_reversed: false,
+                        marked_range: None,
+                        last_layout: None,
+                        last_bounds: None,
+                        is_selecting: false,
+                    });
+            
+                    cx.set_global(AppState {
+                        app_mode,
+                        themes: all_themes,
+                        selected_theme_index: 0, // Default to the first theme
+                        sleep_duration_input,
+                        fade_duration_input,
+                        dropdown_open: false,
+                        active_theme: initial_active_theme,
+                    });
+            
+                    // --- Action Handlers ---
+                    cx.on_action(|_: &ToggleDropdown, cx| {
+                        cx.update_global(|app_state: &mut AppState, _| {
+                            app_state.dropdown_open = !app_state.dropdown_open;
+                        });
+                    });
+            
+                    cx.on_action(|action: &SelectTheme, cx| {
+                        cx.update_global(|app_state: &mut AppState, _| {
+                            app_state.selected_theme_index = action.theme_index;
+                            app_state.dropdown_open = false; // Close dropdown after selection
+                        });
+                    });
+            
+                    cx.on_action(|_: &RunSimulation, cx| {
+                        let (current_theme, next_theme, sleep_duration, fade_duration) = cx.read_global(|app_state: &AppState, cx: &App| {
+                            // HACK: This assumes the "current" theme is the one not selected in the dropdown.
+                            // This is brittle and only works for two themes.
+                            // A better solution would be to store a `base_theme_index` in AppState.
+                            let current_theme_index =
+                                (app_state.selected_theme_index + 1) % app_state.themes.len();
+                            let current_theme = app_state.themes[current_theme_index]
+                                .interpolatable_theme
+                                .clone();
+                            let next_theme = app_state.themes[app_state.selected_theme_index]
+                                .interpolatable_theme
+                                .clone();
+            
+                            let sleep_seconds = app_state
+                                .sleep_duration_input
+                                .read(cx)
+                                .content
+                                .parse::<f32>()
+                                .unwrap_or(5.0);
+                            let fade_seconds = app_state
+                                .fade_duration_input
+                                .read(cx)
+                                .content
+                                .parse::<f32>()
+                                .unwrap_or(5.0);
+            
+                            let sleep_duration = ChronoDuration::seconds(sleep_seconds as i64);
+                            let fade_duration = ChronoDuration::seconds(fade_seconds as i64);
+                            (current_theme, next_theme, sleep_duration, fade_duration)
+                        });
 
-        cx.set_global(AppState {
-            app_mode,
-            themes: all_themes,
-            selected_theme_index: 0, // Default to the first theme
-            sleep_duration_seconds: 5.0, // Default value
-            fade_duration_seconds: 5.0, // Default value
-            dropdown_open: false,
-            active_theme: initial_active_theme,
-        });
+        
+
+                    cx.spawn(move |async_cx: &mut AsyncApp| {
+
+                        let async_cx = async_cx.clone();
+
+                        async move {
+
+                            let (theme_sender, mut theme_receiver) = mpsc::channel(32);
+
+        
+
+                            let now = Local::now().time();
+
+                            let sim_schedule = Arc::new(vec![
+
+                                ScheduleEntry {
+
+                                    time: now,
+
+                                    theme: current_theme.clone(),
+
+                                    fade_duration: ChronoDuration::seconds(0),
+
+                                },
+
+                                ScheduleEntry {
+
+                                    time: now + sleep_duration + fade_duration,
+
+                                    theme: next_theme.clone(),
+
+                                    fade_duration,
+
+                                },
+
+                            ]);
+
+        
+
+                            ThemeScheduler::spawn(theme_sender.clone(), sim_schedule, AppMode::Interactive);
+
+        
+
+                            while let Some(theme) = theme_receiver.next().await {
+
+                                async_cx.update(|cx| set_active_theme(theme, cx)).ok();
+
+                            }
+
+                            info!("Simulation finished and channel closed.");
+
+                        }
+
+                    })
+
+                    .detach();
+
+                });
 
         // Spawn a task to manage the theme scheduling
         cx.spawn(move |async_cx: &mut AsyncApp| {
@@ -222,7 +391,9 @@ fn main() {
                 let (theme_sender, mut theme_receiver) = mpsc::channel(32);
 
                 // Get app_mode from the global AppState
-                let current_app_mode = async_cx.read_global::<AppState, _>(|app_state, _| app_state.app_mode).expect("Should be able to read AppState");
+                let current_app_mode = async_cx
+                    .read_global::<AppState, _>(|app_state, _| app_state.app_mode)
+                    .expect("Should be able to read AppState");
 
                 // Only spawn the scheduler if in Scheduler mode
                 if current_app_mode == AppMode::Scheduler {
