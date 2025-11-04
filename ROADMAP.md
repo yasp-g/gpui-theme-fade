@@ -1,7 +1,7 @@
 # Project Roadmap
 
-**Last Updated:** 2025-10-30
-**Current Goal:** Begin the implementation of the detailed steps outlined for Phase 2.
+**Last Updated:** 2025-11-02
+**Current Goal:** Resolve the final compilation error.
 
 **Next Goal:** Refactor the application from a passive, time-based scheduler into an interactive tool for testing theme transitions. This will accelerate development and debugging.
 
@@ -24,14 +24,23 @@ To achieve this, we will implement a one-shot simulation strategy:
 
 This approach allows us to use the real scheduler code in a controlled test environment.
 
-### Implementation Notes & Refinements
+### Implementation Notes & Refinements (2025-11-02)
 
-During the initial refactoring, several unforeseen tasks were completed:
+Significant progress has been made, and we are down to a single compilation error.
 
-- **`AppState` as a `Global`:** The application's state management was centralized by creating a new `AppState` struct. This struct was made a `gpui::Global`, replacing the previous, simpler `ActiveTheme` global. This provides a single source of truth for the UI.
-- **`Theme` Struct:** A new `Theme` struct was created to encapsulate a theme's name (`String`) and its `InterpolatableTheme` data. This is used in the `AppState.themes` vector.
-- **`Default` Trait Implementation:** To allow `AppState` to derive the `Default` trait, a manual `impl Default for AppMode` was added, setting `AppMode::Scheduler` as the default.
-- **Handling `Result` from `read_global`:** The `gpui::AsyncAppContext::read_global` function returns a `Result`. The implementation now correctly handles this by using `.expect()` to unwrap the value, ensuring that a failure to read the global state will result in a controlled panic.
+The latest round of fixes addressed a number of issues:
+
+- **Dependency Management:** Added missing dependencies (`futures`, `once_cell`, `regex`) to `Cargo.toml` and corrected the `schemars` version to `1.0.4` to resolve a version conflict with `gpui`. The invalid `typely` crate was also removed.
+- **GPUI API Corrections:**
+  - **Actions:** Corrected `dispatch_action` calls to pass references (`&MyAction`) instead of values, which was causing `mismatched types` errors.
+  - **Styling:** Replaced incorrect `.border()` calls with the correct `.border_1()`.
+  - **Stateful Elements:** Made clickable `div`s stateful by adding unique IDs with `.id()`, which is required to use `on_click` handlers.
+  - **Event Listeners:** Corrected the closure signature for `on_click` listeners to match the expected four arguments.
+  - **Return Types:** Adjusted a function's return type from `Div` to `impl IntoElement` to correctly handle the `Stateful<Div>` type returned after adding an `.id()`.
+  - **Placeholders:** Replaced an incorrect `List::new()` with `div()` for a placeholder element.
+  - **Invalid Methods:** Removed a call to `.z_index()`, which is not a valid method on `Div`. Layering will be addressed separately.
+
+- **Remaining Issue:** The final compilation error is in `src/main.rs`, where a `.unwrap()` call is being incorrectly applied to a tuple returned from `cx.read_global`. This will be the next focus.
 
 ### Detailed Steps
 
@@ -62,17 +71,17 @@ During the initial refactoring, several unforeseen tasks were completed:
   - [x] The `render` method will conditionally render the UI based on the `app_mode`.
   - [x] If `app_mode` is `AppMode::Scheduler`, the view can remain as it is (or show a simple status).
   - [x] If `app_mode` is `AppMode::Interactive`, render the following controls:
-    - [ ] **Main Container:** A root `div` element.
-    - [ ] **Current Theme Display:** A `text` element showing the name of the current base theme.
-    - [ ] **Next Theme Selector (Dropdown):**
-      - [ ] A clickable `div` to toggle the `dropdown_open` state.
-      - [ ] A conditionally rendered `list` of available themes.
-      - [ ] Each item in the list will be clickable to update `selected_theme_index`.
-    - [ ] **Sleep Duration Input:** A `TextInput` view for `sleep_duration_seconds`.
-    - [ ] **Fade Duration Input:** A `TextInput` view for `fade_duration_seconds`.
-    - [ ] **"Run Simulation" Button:**
-      - [ ] A clickable `div` with a `text` label.
-      - [ ] The `on_click` handler will spawn a new thread to run the one-shot simulation as described in the "Design & Simulation Strategy" section.
+    - [x] **Main Container:** A root `div` element.
+    - [x] **Current Theme Display:** A `text` element showing the name of the current base theme.
+    - [x] **Next Theme Selector (Dropdown):**
+      - [x] A clickable `div` to toggle the `dropdown_open` state.
+      - [x] A conditionally rendered `list` of available themes.
+      - [x] Each item in the list will be clickable to update `selected_theme_index`.
+    - [x] **Sleep Duration Input:** A `TextInput` view for `sleep_duration_seconds`.
+    - [x] **Fade Duration Input:** A `TextInput` view for `fade_duration_seconds`.
+    - [x] **"Run Simulation" Button:**
+      - [x] A clickable `div` with a `text` label.
+      - [x] The `on_click` handler will spawn a new thread to run the one-shot simulation as described in the "Design & Simulation Strategy" section.
 
 ### Implementation Notes & Refinements (2025-10-31)
 
