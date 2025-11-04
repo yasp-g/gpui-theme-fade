@@ -128,6 +128,8 @@ pub struct AppState {
     pub selected_theme_index: usize,
     pub sleep_duration_input: Entity<TextInput>,
     pub fade_duration_input: Entity<TextInput>,
+    pub sleep_input_is_valid: bool,
+    pub fade_input_is_valid: bool,
     pub dropdown_open: bool,
     // The currently active theme, which the UI renders.
     pub active_theme: InterpolatableTheme,
@@ -288,6 +290,8 @@ fn main() {
             selected_theme_index: 0, // Default to the first theme
             sleep_duration_input,
             fade_duration_input,
+            sleep_input_is_valid: true,
+            fade_input_is_valid: true,
             dropdown_open: false,
             active_theme: initial_active_theme,
         });
@@ -306,74 +310,79 @@ fn main() {
             });
         });
 
-        cx.on_action(|_: &RunSimulation, cx| {
-            let (current_theme, next_theme, sleep_duration, fade_duration) =
-                cx.read_global(|app_state: &AppState, cx: &App| {
-                    // HACK: This assumes the "current" theme is the one not selected in the dropdown.
-                    // This is brittle and only works for two themes.
-                    // A better solution would be to store a `base_theme_index` in AppState.
+        cx.on_action(|_: &RunSimulation, cx: &mut App| {
+            // First, get the entity handles from the global state.
+            let (sleep_input_handle, fade_input_handle, current_theme, next_theme) =
+                cx.read_global(|app_state: &AppState, _| {
                     let current_theme_index =
                         (app_state.selected_theme_index + 1) % app_state.themes.len();
-                    let current_theme = app_state.themes[current_theme_index]
-                        .interpolatable_theme
-                        .clone();
-                    let next_theme = app_state.themes[app_state.selected_theme_index]
-                        .interpolatable_theme
-                        .clone();
-
-                    let sleep_seconds = app_state
-                        .sleep_duration_input
-                        .read(cx)
-                        .content
-                        .parse::<f32>()
-                        .unwrap_or(5.0);
-                    let fade_seconds = app_state
-                        .fade_duration_input
-                        .read(cx)
-                        .content
-                        .parse::<f32>()
-                        .unwrap_or(5.0);
-
-                    let sleep_duration = ChronoDuration::seconds(sleep_seconds as i64);
-                    let fade_duration = ChronoDuration::seconds(fade_seconds as i64);
-                    (current_theme, next_theme, sleep_duration, fade_duration)
+                    (
+                        app_state.sleep_duration_input.clone(),
+                        app_state.fade_duration_input.clone(),
+                        app_state.themes[current_theme_index]
+                            .interpolatable_theme
+                            .clone(),
+                        app_state.themes[app_state.selected_theme_index]
+                            .interpolatable_theme
+                            .clone(),
+                    )
                 });
 
-            cx.spawn(move |async_cx: &mut AsyncApp| {
-                let async_cx = async_cx.clone();
+            // Now, use the window context `cx` to read the entity state.
+            let sleep_content = sleep_input_handle.read(cx).content.clone();
+            let fade_content = fade_input_handle.read(cx).content.clone();
 
-                async move {
-                    let (theme_sender, mut theme_receiver) = mpsc::channel(32);
+            // Perform validation.
+            let sleep_seconds = sleep_content.parse::<f32>();
+            let fade_seconds = fade_content.parse::<f32>();
 
-                    let now = Local::now().time();
+            let sleep_is_valid = sleep_seconds.is_ok();
+            let fade_is_valid = fade_seconds.is_ok();
 
-                    let sim_schedule = Arc::new(vec![
-                        ScheduleEntry {
-                            time: now,
+            // Update the validity flags in AppState.
+            cx.update_global(|app_state: &mut AppState, _| {
+                app_state.sleep_input_is_valid = sleep_is_valid;
+                app_state.fade_input_is_valid = fade_is_valid;
+            });
 
-                            theme: current_theme.clone(),
+            // Only run the simulation if both inputs are valid.
+            if let (Ok(sleep), Ok(fade)) = (sleep_seconds, fade_seconds) {
+                let sleep_duration = ChronoDuration::seconds(sleep as i64);
+                let fade_duration = ChronoDuration::seconds(fade as i64);
 
-                            fade_duration: ChronoDuration::seconds(0),
-                        },
-                        ScheduleEntry {
-                            time: now + sleep_duration + fade_duration,
+                cx.spawn(move |async_cx: &mut AsyncApp| {
+                    let async_cx = async_cx.clone();
+                    async move {
+                        let (theme_sender, mut theme_receiver) = mpsc::channel(32);
 
-                            theme: next_theme.clone(),
+                        let now = Local::now().time();
+                        let sim_schedule = Arc::new(vec![
+                            ScheduleEntry {
+                                time: now,
+                                theme: current_theme.clone(),
+                                fade_duration: ChronoDuration::seconds(0),
+                            },
+                            ScheduleEntry {
+                                time: now + sleep_duration + fade_duration,
+                                theme: next_theme.clone(),
+                                fade_duration,
+                            },
+                        ]);
 
-                            fade_duration,
-                        },
-                    ]);
+                        ThemeScheduler::spawn(
+                            theme_sender.clone(),
+                            sim_schedule,
+                            AppMode::Interactive,
+                        );
 
-                    ThemeScheduler::spawn(theme_sender.clone(), sim_schedule, AppMode::Interactive);
-
-                    while let Some(theme) = theme_receiver.next().await {
-                        async_cx.update(|cx| set_active_theme(theme, cx)).ok();
+                        while let Some(theme) = theme_receiver.next().await {
+                            async_cx.update(|cx| set_active_theme(theme, cx)).ok();
+                        }
+                        info!("Simulation finished and channel closed.");
                     }
-
-                    info!("Simulation finished and channel closed.");
-                }
-            })
-            .detach();
+                })
+                .detach();
+            }
         });
 
         // Spawn a task to manage the theme scheduling
