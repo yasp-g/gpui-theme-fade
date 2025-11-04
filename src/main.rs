@@ -2,8 +2,8 @@ use anyhow::{Result, anyhow};
 use chrono::{Duration as ChronoDuration, Local, NaiveTime};
 use futures::{StreamExt, channel::mpsc};
 use gpui::{
-    Action, App, AppContext, Application, AsyncApp, Context, Entity, Global, IntoElement, Render,
-    SharedString, Window, div, prelude::*,
+    div, prelude::*, Action, App, AppContext, Application, AsyncApp, Context, Entity, Global, IntoElement,
+    KeyBinding, Render, SharedString, Window,
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -17,7 +17,7 @@ use scheduler::{
     Color, InterpolatableTheme, ScheduleEntry, ThemeScheduler, find_previous_event_index,
     lerp_theme,
 };
-use text_input::TextInput;
+use text_input::{TextInput, Backspace, Delete, Left, Right, SelectLeft, SelectRight, SelectAll, Home, End, Paste, Cut, Copy};
 
 // --- 1. ACTIONS ---
 #[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
@@ -217,6 +217,21 @@ fn main() {
         parse_zed_theme(&ayu_light_json, "Ayu Light").expect("Failed to parse Ayu Light");
 
     Application::new().run(move |cx: &mut App| {
+        cx.bind_keys([
+            KeyBinding::new("backspace", Backspace, None),
+            KeyBinding::new("delete", Delete, None),
+            KeyBinding::new("left", Left, None),
+            KeyBinding::new("right", Right, None),
+            KeyBinding::new("shift-left", SelectLeft, None),
+            KeyBinding::new("shift-right", SelectRight, None),
+            KeyBinding::new("cmd-a", SelectAll, None),
+            KeyBinding::new("home", Home, None),
+            KeyBinding::new("end", End, None),
+            KeyBinding::new("cmd-v", Paste, None),
+            KeyBinding::new("cmd-c", Copy, None),
+            KeyBinding::new("cmd-x", Cut, None),
+        ]);
+
         // --- This is our mock schedule ---
         let schedule = Arc::new(vec![
             ScheduleEntry {
