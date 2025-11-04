@@ -1,7 +1,7 @@
 # Project Roadmap
 
 **Last Updated:** 2025-11-02
-**Current Goal:** Resolve the final compilation error.
+**Current Goal:** Address the remaining issues in **Implementation Notes & Refinements** section
 
 **Next Goal:** Refactor the application from a passive, time-based scheduler into an interactive tool for testing theme transitions. This will accelerate development and debugging.
 
@@ -40,7 +40,9 @@ The latest round of fixes addressed a number of issues:
   - **Placeholders:** Replaced an incorrect `List::new()` with `div()` for a placeholder element.
   - **Invalid Methods:** Removed a call to `.z_index()`, which is not a valid method on `Div`. Layering will be addressed separately.
 
-- **Remaining Issue:** The final compilation error is in `src/main.rs`, where a `.unwrap()` call is being incorrectly applied to a tuple returned from `cx.read_global`. This will be the next focus.
+- **Remaining Issues:**
+  - [ ] **Styling:** The input box has a hardcoded style that won't look good when we switch to a dark theme.
+  - [ ] **No "Enter" key handling:** Pressing enter in the text box does nothing.
 
 ### Detailed Steps
 
