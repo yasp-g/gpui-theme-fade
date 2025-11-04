@@ -1,52 +1,12 @@
 use std::ops::Range;
 
 use gpui::{
-    actions,
-    black,
-    div,
-    fill,
-    hsla,
-    opaque_grey,
-    point,
-    prelude::*,
-    px,
-    relative,
-    rgb,
-    rgba,
-    size,
-    white,
-    yellow,
-    App,
-    Application,
-    Bounds,
-    ClipboardItem,
-    Context,
-    CursorStyle,
-    ElementId,
-    ElementInputHandler,
-    Entity,
-    EntityInputHandler,
-    FocusHandle,
-    Focusable,
-    GlobalElementId,
-    KeyBinding,
-    LayoutId,
-    MouseButton,
-    MouseDownEvent,
-    MouseMoveEvent,
-    MouseUpEvent,
-    PaintQuad,
-    Pixels,
-    Point,
-    ShapedLine,
-    SharedString,
-    Style,
-    TextRun,
-    UTF16Selection,
-    UnderlineStyle,
-    Window,
-    WindowBounds,
-    WindowOptions,
+    App, Application, Bounds, ClipboardItem, Context, CursorStyle, ElementId, ElementInputHandler,
+    Entity, EntityInputHandler, FocusHandle, Focusable, GlobalElementId, KeyBinding, LayoutId,
+    MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent, PaintQuad, Pixels, Point,
+    ShapedLine, SharedString, Style, TextRun, UTF16Selection, UnderlineStyle, Window, WindowBounds,
+    WindowOptions, actions, black, div, fill, hsla, opaque_grey, point, prelude::*, px, relative,
+    rems, rgb, rgba, size, white, yellow,
 };
 use unicode_segmentation::*;
 
@@ -605,6 +565,7 @@ impl Element for TextElement {
 impl Render for TextInput {
     fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         div()
+            .w(rems(4.0))
             .flex()
             .key_context("TextInput")
             .track_focus(&self.focus_handle(cx))
@@ -645,7 +606,3 @@ impl Focusable for TextInput {
         self.focus_handle.clone()
     }
 }
-
-
-
-
