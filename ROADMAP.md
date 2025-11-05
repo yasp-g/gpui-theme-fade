@@ -1,6 +1,6 @@
 # Project Roadmap
 
-**Last Updated:** 2025-11-02
+**Last Updated:** 2025-11-05
 **Current Goal:** Address the remaining issues in **Implementation Notes & Refinements** section
 
 **Next Goal:** Refactor the application from a passive, time-based scheduler into an interactive tool for testing theme transitions. This will accelerate development and debugging.
@@ -24,6 +24,10 @@ To achieve this, we will implement a one-shot simulation strategy:
 
 This approach allows us to use the real scheduler code in a controlled test environment.
 
+### Implementation Notes & Refinements (2025-11-05)
+
+- **Theming:** Refactored the `TextInput` component to be theme-aware. The component now pulls background and placeholder colors from the active theme data stored in the `AppState` global, resolving issues where its appearance was disconnected from the application's theme. This replaced hardcoded color values with dynamic, theme-based styling.
+
 ### Implementation Notes & Refinements (2025-11-02)
 
 Significant progress has been made, and we are down to a single compilation error.
@@ -41,7 +45,7 @@ The latest round of fixes addressed a number of issues:
   - **Invalid Methods:** Removed a call to `.z_index()`, which is not a valid method on `Div`. Layering will be addressed separately.
 
 - **Remaining Issues:**
-  - [ ] **Styling:** The input box has a hardcoded style that won't look good when we switch to a dark theme.
+  - [x] **Styling:** The input box has a hardcoded style that won't look good when we switch to a dark theme.
   - [ ] **No "Enter" key handling:** Pressing enter in the text box does nothing.
 
 ### Detailed Steps
