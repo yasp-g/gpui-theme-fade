@@ -1,9 +1,12 @@
-use crate::AppView;
-use crate::{SelectTheme, Theme, ToggleDropdown};
-use gpui::{Context, Div, IntoElement, div, hsla, prelude::*, rems};
+use crate::{AppView, FocusNext, FocusPrev, Submit, Theme};
+use gpui::{div, hsla, prelude::*, rems, Context, Div, IntoElement};
 
 // This helper function does NOT need cx, because the on_click handler provides its own.
-fn render_theme_selection_dropdown(themes: &[Theme], selected_theme_index: usize) -> Div {
+fn render_theme_selection_dropdown(
+    themes: &[Theme],
+    selected_theme_index: usize,
+    cx: &mut Context<AppView>,
+) -> Div {
     div()
         .absolute()
         .top(rems(2.5))
@@ -23,9 +26,9 @@ fn render_theme_selection_dropdown(themes: &[Theme], selected_theme_index: usize
                 .when(index == selected_theme_index, |style| {
                     style.bg(hsla(0., 0., 1., 0.2))
                 })
-                .on_click(move |_, _, cx| {
-                    cx.dispatch_action(&SelectTheme { theme_index: index });
-                })
+                .on_click(cx.listener(move |view, _, _, cx| {
+                    view.select_theme(index, cx);
+                }))
                 .child(theme.name.clone())
         }))
 }
@@ -77,9 +80,9 @@ pub fn render_interactive_ui(
                                 .border_color(hsla(0., 0., 1., 0.2))
                                 .rounded_md()
                                 .hover(|style| style.bg(hsla(0., 0., 1., 0.1)))
-                                .on_click(|_, _, cx| {
-                                    cx.dispatch_action(&ToggleDropdown);
-                                })
+                                .on_click(cx.listener(|view, _, _, cx| {
+                                    view.toggle_dropdown(cx);
+                                }))
                                 .child(
                                     app_state.themes[app_state.selected_theme_index]
                                         .name
@@ -91,6 +94,7 @@ pub fn render_interactive_ui(
                             d.child(render_theme_selection_dropdown(
                                 &app_state.themes,
                                 app_state.selected_theme_index,
+                                cx,
                             ))
                         }),
                 ),

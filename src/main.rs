@@ -20,13 +20,7 @@ use scheduler::{
 use text_input::{TextInput, Backspace, Delete, Left, Right, SelectLeft, SelectRight, SelectAll, Home, End, Paste, Cut, Copy};
 
 // --- 1. ACTIONS ---
-#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
-pub struct ToggleDropdown;
 
-#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
-pub struct SelectTheme {
-    pub theme_index: usize,
-}
 
 #[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
 pub struct SetSleepDuration {
@@ -171,6 +165,23 @@ impl AppView {
 
     fn on_submit(&mut self, _: &Submit, _: &mut Window, cx: &mut Context<Self>) {
         self.run_simulation(cx);
+    }
+
+    pub fn toggle_dropdown(&mut self, cx: &mut Context<Self>) {
+        cx.update_global::<AppState, _>(|app_state, _| {
+            app_state.dropdown_open = !app_state.dropdown_open;
+        });
+    }
+
+    pub fn select_theme(&mut self, index: usize, cx: &mut Context<Self>) {
+        cx.update_global::<AppState, _>(|app_state, cx| {
+            app_state.selected_theme_index = index;
+            app_state.dropdown_open = false; // Close dropdown on selection
+
+            // Get the already-parsed theme directly from our app state
+            let theme = &app_state.themes[index].interpolatable_theme;
+            set_active_theme(theme.clone(), cx);
+        });
     }
 
     fn run_simulation(&mut self, cx: &mut Context<Self>) {
@@ -407,18 +418,7 @@ fn main() {
         });
 
         // --- Action Handlers ---
-        cx.on_action(|_: &ToggleDropdown, cx| {
-            cx.update_global(|app_state: &mut AppState, _| {
-                app_state.dropdown_open = !app_state.dropdown_open;
-            });
-        });
 
-        cx.on_action(|action: &SelectTheme, cx| {
-            cx.update_global(|app_state: &mut AppState, _| {
-                app_state.selected_theme_index = action.theme_index;
-                app_state.dropdown_open = false; // Close dropdown after selection
-            });
-        });
 
 
 

@@ -64,6 +64,10 @@ This approach allows us to use the real scheduler code in a controlled test envi
 
 - **Theming:** Refactored the `TextInput` component to be theme-aware. The component now pulls background and placeholder colors from the active theme data stored in the `AppState` global, resolving issues where its appearance was disconnected from the application's theme. This replaced hardcoded color values with dynamic, theme-based styling.
 
+- **Action Handler Refactoring:** Resolved a `gpui: window not found` runtime error occurring when the theme selector dropdown was clicked.
+  - **Problem:** The `ToggleDropdown` and `SelectTheme` actions were being handled by global `cx.on_action` listeners defined in the `main` function. This is the same pattern that previously caused issues with keyboard navigation, where the action handler receives a context that is disconnected from the application window.
+  - **Solution:** The handlers for these actions were refactored into methods on the `AppView` struct (`on_toggle_dropdown`, `on_select_theme`). The UI now attaches these methods using `cx.listener`, ensuring all UI-related actions are handled within a valid window context. The old global handlers were removed.
+
 ### Implementation Notes & Refinements (2025-11-02)
 
 Significant progress has been made, and we are down to a single compilation error.
