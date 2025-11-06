@@ -1,5 +1,6 @@
 use gpui::{div, hsla, prelude::*, rems, Context, Div, IntoElement};
 use crate::{SelectTheme, Theme, ToggleDropdown};
+use crate::{AppState, AppView, FocusNext, FocusPrev, SetFadeDuration, SetSleepDuration, Submit};
 
 // This helper function does NOT need cx, because the on_click handler provides its own.
 fn render_theme_selection_dropdown(
@@ -42,9 +43,10 @@ pub fn render_interactive_ui(
     let text_color = active_theme.0.get("text").unwrap().hsla;
 
     div()
-        .id("interactive-ui")
-        .flex()
-        .flex_col()
+        .key_context("InteractiveUI")
+        .on_action(cx.listener(AppView::on_focus_next))
+        .on_action(cx.listener(AppView::on_focus_prev))
+        .on_action(cx.listener(AppView::on_submit))
         .size_full()
         .bg(surface_background)
         .text_color(text_color)
@@ -64,6 +66,7 @@ pub fn render_interactive_ui(
                         .child(
                             div()
                                 .id("theme-selector-button")
+                                .track_focus(&app_state.theme_selector_focus_handle)
                                 .flex()
                                 .items_center()
                                 .gap_2()
@@ -145,6 +148,7 @@ pub fn render_interactive_ui(
                         .child(
                             div()
                                 .id("run-simulation-button")
+                                .track_focus(&app_state.run_simulation_focus_handle)
                                 .p_2()
                                 .border_1()
                                 .border_color(hsla(0., 0., 1., 0.2))

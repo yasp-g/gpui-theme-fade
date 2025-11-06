@@ -1,11 +1,32 @@
 # Project Roadmap
 
 **Last Updated:** 2025-11-05
-**Current Goal:** Address the remaining issues in **Implementation Notes & Refinements** section
+**Current Goal:** Implement comprehensive keyboard navigation for the interactive UI.
 
 **Next Goal:** Refactor the application from a passive, time-based scheduler into an interactive tool for testing theme transitions. This will accelerate development and debugging.
 
 ---
+
+### Implementation Notes & Refinements (2025-11-05) - *Revised Plan*
+
+After repeated compilation failures, a new strategy for implementing keyboard navigation has been devised. The root cause of the failures was identified as a misuse of GPUI's context and action handling systems.
+
+The previous approach attempted to handle window-specific actions (like focus changes) from the global application context in the `main` function. This created complex context-passing challenges and incorrect API usage.
+
+The new plan is to refactor the action handlers to be methods on the `AppView` struct itself, which is the idiomatic pattern demonstrated in `sandbox/gpui-source/gpui/examples/tab_stop.rs`.
+
+**Refactoring Steps:**
+
+1.  **Move Action Logic to `AppView`:** The logic for `FocusNext`, `FocusPrev`, and `Submit` actions will be moved from the `cx.on_action` closures in `main.rs` into new methods on `impl AppView`.
+    -   `on_focus_next` will simply call `window.focus_next()`.
+    -   `on_focus_prev` will simply call `window.focus_prev()`.
+    -   `on_submit` will call the existing `self.run_simulation(cx)`.
+
+2.  **Attach Listeners in `render`:** In `src/ui.rs`, the root `div` of the interactive UI will use `.on_action(cx.listener(..))` to link the `FocusNext`, `FocusPrev`, and `Submit` actions to their new corresponding methods on `AppView`.
+
+3.  **Cleanup `main.rs`:** The now-redundant `cx.on_action` closures for these three actions will be removed from the `main` function, simplifying the application setup significantly.
+
+This approach aligns our code with a proven working example and is expected to resolve the persistent compilation errors.
 
 ## Phase 2: Interactive Theme Tester UI
 
@@ -25,6 +46,14 @@ To achieve this, we will implement a one-shot simulation strategy:
 This approach allows us to use the real scheduler code in a controlled test environment.
 
 ### Implementation Notes & Refinements (2025-11-05)
+
+- **Keyboard Navigation:** The next step is to implement full keyboard control for the interactive simulator to improve accessibility and efficiency. Currently facing challenges with correctly applying GPUI's context API for focus management and action dispatch, requiring a deeper dive into the framework's source code.
+  - **Focus Management:**
+    - Implement `Tab` and `Shift+Tab` functionality to cycle focus between all interactive elements.
+    - The focus chain will be: Theme Selector Dropdown -> Sleep Duration Input -> Fade Duration Input -> Run Simulation Button.
+  - **"Enter" Key Submission:**
+    - Pressing the "Enter" key when focused on either of the text input fields will trigger the simulation.
+    - Pressing the "Enter" key when focused on the "Run Simulation" button will trigger the simulation.
 
 - **Theming:** Refactored the `TextInput` component to be theme-aware. The component now pulls background and placeholder colors from the active theme data stored in the `AppState` global, resolving issues where its appearance was disconnected from the application's theme. This replaced hardcoded color values with dynamic, theme-based styling.
 
@@ -46,7 +75,7 @@ The latest round of fixes addressed a number of issues:
 
 - **Remaining Issues:**
   - [x] **Styling:** The input box has a hardcoded style that won't look good when we switch to a dark theme.
-  - [ ] **No "Enter" key handling:** Pressing enter in the text box does nothing.
+  - [-] **No "Enter" key handling:** Pressing enter in the text box does nothing. (Superseded by Keyboard Navigation task)
 
 ### Detailed Steps
 

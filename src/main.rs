@@ -2,7 +2,7 @@ use anyhow::{Result, anyhow};
 use chrono::{Duration as ChronoDuration, Local, NaiveTime};
 use futures::{StreamExt, channel::mpsc};
 use gpui::{
-    div, prelude::*, Action, App, AppContext, Application, AsyncApp, Context, Entity, Global, IntoElement,
+    div, prelude::*, Action, App, AppContext, Application, AsyncApp, Context, Entity, FocusHandle, Global, IntoElement,
     KeyBinding, Render, SharedString, Window,
 };
 use schemars::JsonSchema;
@@ -37,6 +37,15 @@ pub struct SetSleepDuration {
 pub struct SetFadeDuration {
     pub seconds: f32,
 }
+
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
+pub struct Submit;
+
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
+pub struct FocusNext;
+
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
+pub struct FocusPrev;
 
 // New enum for application mode
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -125,6 +134,8 @@ pub struct AppState {
     pub selected_theme_index: usize,
     pub sleep_duration_input: Entity<TextInput>,
     pub fade_duration_input: Entity<TextInput>,
+    pub theme_selector_focus_handle: FocusHandle,
+    pub run_simulation_focus_handle: FocusHandle,
     pub sleep_input_is_valid: bool,
     pub fade_input_is_valid: bool,
     pub dropdown_open: bool,
@@ -150,6 +161,18 @@ fn set_active_theme<T: AppContext + gpui::BorrowAppContext>(
 pub struct AppView;
 
 impl AppView {
+    fn on_focus_next(&mut self, _: &FocusNext, window: &mut Window, _: &mut Context<Self>) {
+        window.focus_next();
+    }
+
+    fn on_focus_prev(&mut self, _: &FocusPrev, window: &mut Window, _: &mut Context<Self>) {
+        window.focus_prev();
+    }
+
+    fn on_submit(&mut self, _: &Submit, _: &mut Window, cx: &mut Context<Self>) {
+        self.run_simulation(cx);
+    }
+
     fn run_simulation(&mut self, cx: &mut Context<Self>) {
         // First, get the entity handles from the global state.
         let (sleep_input_handle, fade_input_handle, current_theme, next_theme) = cx
@@ -268,9 +291,10 @@ fn create_duration_input(
     cx: &mut App,
     content: impl Into<SharedString>,
     placeholder: impl Into<SharedString>,
+    tab_index: usize,
 ) -> Entity<TextInput> {
     cx.new(|cx| TextInput {
-        focus_handle: cx.focus_handle(),
+        focus_handle: cx.focus_handle().tab_index(tab_index as isize).tab_stop(true),
         content: content.into(),
         placeholder: placeholder.into(),
         selected_range: 0..0,
@@ -298,18 +322,22 @@ fn main() {
 
     Application::new().run(move |cx: &mut App| {
         cx.bind_keys([
-            KeyBinding::new("backspace", Backspace, None),
-            KeyBinding::new("delete", Delete, None),
-            KeyBinding::new("left", Left, None),
-            KeyBinding::new("right", Right, None),
-            KeyBinding::new("shift-left", SelectLeft, None),
-            KeyBinding::new("shift-right", SelectRight, None),
-            KeyBinding::new("cmd-a", SelectAll, None),
-            KeyBinding::new("home", Home, None),
-            KeyBinding::new("end", End, None),
-            KeyBinding::new("cmd-v", Paste, None),
-            KeyBinding::new("cmd-c", Copy, None),
-            KeyBinding::new("cmd-x", Cut, None),
+            KeyBinding::new("backspace", Backspace, Some("TextInput")),
+            KeyBinding::new("delete", Delete, Some("TextInput")),
+            KeyBinding::new("left", Left, Some("TextInput")),
+            KeyBinding::new("right", Right, Some("TextInput")),
+            KeyBinding::new("shift-left", SelectLeft, Some("TextInput")),
+            KeyBinding::new("shift-right", SelectRight, Some("TextInput")),
+            KeyBinding::new("cmd-a", SelectAll, Some("TextInput")),
+            KeyBinding::new("home", Home, Some("TextInput")),
+            KeyBinding::new("end", End, Some("TextInput")),
+            KeyBinding::new("cmd-v", Paste, Some("TextInput")),
+            KeyBinding::new("cmd-c", Copy, Some("TextInput")),
+            KeyBinding::new("cmd-x", Cut, Some("TextInput")),
+            KeyBinding::new("tab", FocusNext, Some("InteractiveUI")),
+            KeyBinding::new("shift-tab", FocusPrev, Some("InteractiveUI")),
+            KeyBinding::new("enter", Submit, Some("InteractiveUI")),
+            KeyBinding::new("enter", Submit, Some("TextInput")),
         ]);
 
         // --- This is our mock schedule ---
@@ -359,8 +387,10 @@ fn main() {
             }
         };
 
-        let sleep_duration_input = create_duration_input(cx, "10", "Sleep seconds...");
-        let fade_duration_input = create_duration_input(cx, "10", "Fade seconds...");
+        let sleep_duration_input = create_duration_input(cx, "10", "Sleep seconds...", 2);
+        let fade_duration_input = create_duration_input(cx, "10", "Fade seconds...", 3);
+        let theme_selector_focus_handle = cx.focus_handle().tab_index(1).tab_stop(true);
+        let run_simulation_focus_handle = cx.focus_handle().tab_index(4).tab_stop(true);
 
         cx.set_global(AppState {
             app_mode,
@@ -368,6 +398,8 @@ fn main() {
             selected_theme_index: 0, // Default to the first theme
             sleep_duration_input,
             fade_duration_input,
+            theme_selector_focus_handle,
+            run_simulation_focus_handle,
             sleep_input_is_valid: true,
             fade_input_is_valid: true,
             dropdown_open: false,
@@ -387,6 +419,8 @@ fn main() {
                 app_state.dropdown_open = false; // Close dropdown after selection
             });
         });
+
+
 
         // --- Open Window and Set Window-Specific Handlers ---
         cx.spawn(move |async_cx: &mut AsyncApp| {
