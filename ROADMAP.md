@@ -55,6 +55,13 @@ This approach allows us to use the real scheduler code in a controlled test envi
     - Pressing the "Enter" key when focused on either of the text input fields will trigger the simulation.
     - Pressing the "Enter" key when focused on the "Run Simulation" button will trigger the simulation.
 
+- **Focus Indication:** To improve UI clarity, visual indicators will be added for focused elements. Currently, the "Run Simulation" button and theme selector dropdown do not visually change when they receive focus via keyboard navigation.
+  - **Implementation:** The `.focus()` style modifier will be applied to these elements in `src/ui.rs`. When focused, their border color will be updated to use the `border_focused` color from the active theme, making the indicator theme-aware.
+
+- **Theme-Aware Styling Fix:** Resolved a runtime panic caused by incorrect theme parsing.
+  - **Problem:** The `parse_zed_theme` function did not handle nested color objects (e.g., `"border": { "focused": "..." }`), causing it to fail to load certain theme colors. This led to a panic when the UI code tried to `.unwrap()` a color that hadn't been loaded.
+  - **Solution:** The theme parser was updated to recursively flatten nested JSON objects, creating dot-separated keys (e.g., `"border.focused"`). The UI code was also updated to use these new keys and to provide a fallback color, preventing future panics if a key is missing from a theme.
+
 - **Theming:** Refactored the `TextInput` component to be theme-aware. The component now pulls background and placeholder colors from the active theme data stored in the `AppState` global, resolving issues where its appearance was disconnected from the application's theme. This replaced hardcoded color values with dynamic, theme-based styling.
 
 ### Implementation Notes & Refinements (2025-11-02)

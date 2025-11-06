@@ -1,12 +1,9 @@
-use gpui::{div, hsla, prelude::*, rems, Context, Div, IntoElement};
+use crate::AppView;
 use crate::{SelectTheme, Theme, ToggleDropdown};
-use crate::{AppState, AppView, FocusNext, FocusPrev, SetFadeDuration, SetSleepDuration, Submit};
+use gpui::{Context, Div, IntoElement, div, hsla, prelude::*, rems};
 
 // This helper function does NOT need cx, because the on_click handler provides its own.
-fn render_theme_selection_dropdown(
-    themes: &[Theme],
-    selected_theme_index: usize,
-) -> Div {
+fn render_theme_selection_dropdown(themes: &[Theme], selected_theme_index: usize) -> Div {
     div()
         .absolute()
         .top(rems(2.5))
@@ -41,6 +38,10 @@ pub fn render_interactive_ui(
     let active_theme = &app_state.active_theme;
     let surface_background = active_theme.0.get("surface.background").unwrap().hsla;
     let text_color = active_theme.0.get("text").unwrap().hsla;
+    let focus_color = active_theme
+        .0
+        .get("border.focused")
+        .map_or(gpui::blue(), |color| color.hsla);
 
     div()
         .key_context("InteractiveUI")
@@ -67,6 +68,7 @@ pub fn render_interactive_ui(
                             div()
                                 .id("theme-selector-button")
                                 .track_focus(&app_state.theme_selector_focus_handle)
+                                .focus(|s| s.border_color(focus_color))
                                 .flex()
                                 .items_center()
                                 .gap_2()
@@ -78,7 +80,11 @@ pub fn render_interactive_ui(
                                 .on_click(|_, _, cx| {
                                     cx.dispatch_action(&ToggleDropdown);
                                 })
-                                .child(app_state.themes[app_state.selected_theme_index].name.clone())
+                                .child(
+                                    app_state.themes[app_state.selected_theme_index]
+                                        .name
+                                        .clone(),
+                                )
                                 .child(div().child("▼")),
                         )
                         .when(app_state.dropdown_open, |d| {
@@ -149,6 +155,7 @@ pub fn render_interactive_ui(
                             div()
                                 .id("run-simulation-button")
                                 .track_focus(&app_state.run_simulation_focus_handle)
+                                .focus(|s| s.border_color(focus_color))
                                 .p_2()
                                 .border_1()
                                 .border_color(hsla(0., 0., 1., 0.2))
