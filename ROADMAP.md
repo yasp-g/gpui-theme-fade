@@ -1,7 +1,7 @@
 # Project Roadmap
 
 **Last Updated:** 2025-11-05
-**Current Goal:** Implement comprehensive keyboard navigation for the interactive UI.
+**Current Goal:** Finalize UI interactivity by implementing Escape key handling and cleaning up any remaining warnings.
 
 **Next Goal:** Refactor the application from a passive, time-based scheduler into an interactive tool for testing theme transitions. This will accelerate development and debugging.
 
@@ -47,13 +47,13 @@ This approach allows us to use the real scheduler code in a controlled test envi
 
 ### Implementation Notes & Refinements (2025-11-05)
 
-- **Keyboard Navigation:** The next step is to implement full keyboard control for the interactive simulator to improve accessibility and efficiency. Currently facing challenges with correctly applying GPUI's context API for focus management and action dispatch, requiring a deeper dive into the framework's source code.
-  - **Focus Management:**
-    - Implement `Tab` and `Shift+Tab` functionality to cycle focus between all interactive elements.
-    - The focus chain will be: Theme Selector Dropdown -> Sleep Duration Input -> Fade Duration Input -> Run Simulation Button.
-  - **"Enter" Key Submission:**
-    - Pressing the "Enter" key when focused on either of the text input fields will trigger the simulation.
-    - Pressing the "Enter" key when focused on the "Run Simulation" button will trigger the simulation.
+- **Keyboard Navigation:** Implemented comprehensive keyboard control for the interactive simulator.
+  - **Focus Management:** `[x]` Implemented `Tab` and `Shift+Tab` functionality to cycle focus between all interactive elements.
+  - **Global "Enter" Key Submission:** `[x]` Pressing "Enter" in text fields or on the "Run Simulation" button correctly triggers the simulation.
+  - **Dropdown Keyboard Control:** `[x]` Implemented full keyboard control for the theme selector dropdown.
+    - `[x]` `Up Arrow` and `Down Arrow` keys now navigate the list of themes when the dropdown is open.
+    - `[x]` `Enter` key now opens the dropdown, or selects the highlighted theme and closes it.
+    - `[ ]` `Escape` key handling to close the dropdown has not been implemented yet.
 
 - **Focus Indication:** To improve UI clarity, visual indicators will be added for focused elements. Currently, the "Run Simulation" button and theme selector dropdown do not visually change when they receive focus via keyboard navigation.
   - **Implementation:** The `.focus()` style modifier will be applied to these elements in `src/ui.rs`. When focused, their border color will be updated to use the `border_focused` color from the active theme, making the indicator theme-aware.
