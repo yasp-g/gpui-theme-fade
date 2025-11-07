@@ -1,5 +1,4 @@
-
-
+use crate::components::button::render_button;
 use crate::{AppView, Theme};
 use gpui::{Context, Div, IntoElement, div, hsla, prelude::*, rems};
 
@@ -221,20 +220,15 @@ pub fn render_interactive_ui(
                                 ),
                         )
                         .child(
-                            div()
-                                .id("run-simulation-button")
-                                .track_focus(&app_state.run_simulation_focus_handle)
-                                .focus(|s| s.border_color(focus_color))
-                                .p_2()
-                                .border_1()
-                                .border_color(hsla(0., 0., 1., 0.2))
-                                .rounded_md()
-                                .text_center()
-                                .hover(|style| style.bg(hsla(0., 0., 1., 0.1)))
-                                .on_click(cx.listener(|view, _, _, cx| {
+                            render_button(
+                                "run-simulation-button",
+                                "Run Simulation",
+                                &app_state.run_simulation_focus_handle,
+                                |view, _, _, cx| {
                                     view.run_simulation(cx);
-                                }))
-                                .child("Run Simulation"),
+                                },
+                                cx,
+                            ),
                         ),
                 )
                 .child(
