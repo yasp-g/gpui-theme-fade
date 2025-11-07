@@ -1,11 +1,21 @@
 # Project Roadmap
 
-**Last Updated:** 2025-11-05
+**Last Updated:** 2025-11-07
 **Current Goal:** Finalize UI interactivity by implementing Escape key handling and cleaning up any remaining warnings.
 
 **Next Goal:** Refactor the application from a passive, time-based scheduler into an interactive tool for testing theme transitions. This will accelerate development and debugging.
 
 ---
+
+### Implementation Notes & Refinements (2025-11-07)
+
+- **Independent Theme Selectors:** Refactored the theme dropdowns to be fully independent, allowing users to select a start and end theme for the simulation separately.
+  - **Problem:** Both the "Start Theme" and "End Theme" selectors were previously tied to the same underlying state, causing them to conflict and behave as a single unit.
+  - **Solution:** The `AppState` was updated to hold separate state for the start and end themes (`start_theme_index`, `end_theme_index`) and their dropdown visibility. The `AppView` methods and the UI were refactored to use this new state. The "Start Theme" selector now instantly updates the application's active theme for immediate visual feedback.
+
+- **Dynamic Theme Loading:** Replaced the hardcoded theme loading mechanism with a dynamic, file-based approach.
+  - **Problem:** The application previously only loaded two specific themes that were hardcoded in `main.rs`.
+  - **Solution:** The `main` function now automatically reads all `.json` files from the `assets/` directory and parses all themes defined within them. This makes adding new themes as simple as dropping a new JSON file into the `assets` folder. The old hardcoded scheduler logic was also removed to simplify the startup process.
 
 ### Implementation Notes & Refinements (2025-11-05) - *Revised Plan*
 
