@@ -13,6 +13,8 @@ use tracing::info;
 pub mod scheduler;
 pub mod text_input;
 pub mod ui;
+pub mod components;
+use crate::components::popover::Popover;
 use scheduler::{
     Color, InterpolatableTheme, ScheduleEntry, ThemeScheduler, find_previous_event_index,
     lerp_theme,
@@ -484,6 +486,7 @@ fn main() {
         let theme_selector_focus_handle = cx.focus_handle().tab_index(1).tab_stop(true);
         let end_theme_selector_focus_handle = cx.focus_handle().tab_index(2).tab_stop(true);
         let run_simulation_focus_handle = cx.focus_handle().tab_index(5).tab_stop(true);
+        let popover = Popover::new(cx);
 
         cx.set_global(AppState {
             app_mode,
