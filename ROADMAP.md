@@ -1,11 +1,21 @@
 # Project Roadmap
 
 **Last Updated:** 2025-11-07
-**Current Goal:** Finalize UI interactivity by implementing Escape key handling and cleaning up any remaining warnings.
+Current Goal: Extract and integrate reusable UI components, starting with a generic Dropdown, to improve modularity and address UI layering.
+*(Previously: Implement a custom dropdown component to fix UI layering and clipping issues - now being addressed through componentization)*
 
-**Next Goal:** Refactor the application from a passive, time-based scheduler into an interactive tool for testing theme transitions. This will accelerate development and debugging.
+**Next Goal:** Finalize UI interactivity by implementing Escape key handling and cleaning up any remaining warnings.
 
 ---
+
+### Implementation Notes & Refinements (2025-11-07) - *Decision Update*
+
+- **New Approach for Dropdowns:** After discovering that the current dropdown implementation suffers from clipping and layering (z-index) issues, a decision was made to build a custom dropdown component from scratch.
+  - **Problem:** The simple, nested `div` approach causes the dropdown menu to be rendered within the bounds of its parent container, leading to it being clipped and appearing behind other UI elements.
+  - **Rationale:** Initial attempts to use a pre-built `Popover` component from an external library (`gpui-component`) revealed significant version incompatibilities with our project's `gpui` dependency. To avoid a complex and brittle dependency setup, we have opted to build our own solution.
+  - **Plan:** The new goal is to investigate GPUI's low-level rendering primitives to create a proper overlay system for a generic `Dropdown` component. This will be a valuable learning exercise and will give us full control over the component's behavior.
+- **Popover Component Status:**
+  - `src/components/popover.rs` was created and integrated. It has since been updated and aligned with the current GPUI API, resolving several compilation issues. It now serves as a basic example of a custom GPUI component.
 
 ### Implementation Notes & Refinements (2025-11-07)
 
@@ -16,6 +26,20 @@
 - **Dynamic Theme Loading:** Replaced the hardcoded theme loading mechanism with a dynamic, file-based approach.
   - **Problem:** The application previously only loaded two specific themes that were hardcoded in `main.rs`.
   - **Solution:** The `main` function now automatically reads all `.json` files from the `assets/` directory and parses all themes defined within them. This makes adding new themes as simple as dropping a new JSON file into the `assets` folder. The old hardcoded scheduler logic was also removed to simplify the startup process.
+
+### Implementation Notes & Refinements (2025-11-07) - *Component Refactoring*
+
+- **Component Extraction Initiative:** Initiated a dedicated effort to extract reusable UI components from `src/ui.rs` into the `src/components/` directory. A `src/components/README.md` has been created to outline the detailed roadmap for this refactoring.
+- **Styled Button Component:** Extracted the "Run Simulation" button into a generic `render_button` function (`src/components/button.rs`). This involved:
+    - Creating the component file and integrating it into `src/components/mod.rs`.
+    - Updating `src/ui.rs` to use the new component.
+    - Resolving several compilation errors related to GPUI API changes, closure signatures, lifetime requirements (`&'static str`), and return types (`impl IntoElement`).
+- **Popover Component Fixes:** Addressed multiple compilation errors in the existing `src/components/popover.rs` component to align it with the current GPUI API. This included:
+    - Updating the `render` method signature to match the `gpui::Render` trait.
+    - Correcting the `on_click` closure's context usage (`_cx_for_method.notify()`).
+    - Making the root `div` stateful with an `id()`.
+    - Aligning `Popover::new` with the `AppContext` trait's generic constraints and using `cx.new` to return `Entity<Self>`.
+- **Generic Dropdown Decision:** The initial plan for a `ThemeSelector` component was generalized into a more reusable `Dropdown` component, which will be the next focus for extraction.
 
 ### Implementation Notes & Refinements (2025-11-05) - *Revised Plan*
 
