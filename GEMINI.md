@@ -119,3 +119,36 @@ div()
     // ... other listeners
 ```
 This ensures that both clicks and key presses execute the exact same code path, providing consistency and stability.
+
+---
+
+## Core UI Update Rule: `cx.notify()` vs. `cx.refresh()`
+
+To prevent repeated compilation errors, the following rule must be strictly followed when updating UI components.
+
+- **Problem:** There has been a recurring mistake of trying to call `cx.refresh()` on a view's context (`&mut Context<V>`), where this method does not exist.
+- **Rule:** When you modify the state of a view *without* calling `cx.update_global(...)` and need to trigger a re-render, the correct method is `cx.notify()`. This is common in keyboard action handlers that may not automatically trigger a redraw.
+- **Automatic Refresh:** Remember that `cx.update_global(...)` automatically triggers a refresh. A manual call to `cx.notify()` is generally not needed after it.
+
+### Correct Usage
+```rust
+// CORRECT: Inside a method on `impl AppView` called from a keyboard action.
+pub fn my_method(&mut self, cx: &mut Context<Self>) {
+    // This method might change global state, but the keyboard-derived
+    // context doesn't auto-refresh the UI.
+    cx.update_global::<AppState, _>(|state, _| {
+        state.some_value += 1;
+    });
+    // We must manually notify the view to redraw.
+    cx.notify();
+}
+```
+
+### Incorrect Usage
+```rust
+// INCORRECT: This will not compile.
+pub fn my_method(&mut self, cx: &mut Context<Self>) {
+    // ...
+    cx.refresh(); // COMPILE ERROR: `refresh` not found on `Context<Self>`
+}
+```
