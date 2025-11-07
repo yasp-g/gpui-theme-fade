@@ -1,4 +1,4 @@
-use gpui::{div, hsla, prelude::*, AppContext, Context, Div, FocusHandle, IntoElement};
+use gpui::{div, hsla, prelude::*, Context, FocusHandle, IntoElement};
 use crate::AppView;
 
 pub fn render_button(

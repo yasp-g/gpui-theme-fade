@@ -1,5 +1,4 @@
-use anyhow::{Result, anyhow};
-use chrono::{Duration as ChronoDuration, Local, NaiveTime};
+use chrono::{Duration as ChronoDuration, Local};
 use futures::{StreamExt, channel::mpsc};
 use gpui::{
     Action, App, AppContext, Application, AsyncApp, Context, Entity, FocusHandle, Global,
@@ -16,8 +15,7 @@ pub mod ui;
 pub mod components;
 use crate::components::popover::Popover;
 use scheduler::{
-    Color, InterpolatableTheme, ScheduleEntry, ThemeScheduler, find_previous_event_index,
-    lerp_theme,
+    Color, InterpolatableTheme, ScheduleEntry, ThemeScheduler,
 };
 use text_input::{
     Backspace, Copy, Cut, Delete, End, Home, Left, Paste, Right, SelectAll, SelectLeft,

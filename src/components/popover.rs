@@ -1,4 +1,4 @@
-use gpui::{div, prelude::*, AppContext, Div, EventEmitter, Entity, Render};
+use gpui::{div, prelude::*, AppContext, EventEmitter, Entity, Render};
 
 pub struct Popover {
     is_open: bool,

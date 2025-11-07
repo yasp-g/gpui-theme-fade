@@ -1,6 +1,6 @@
 use crate::components::button::render_button;
-use crate::{AppView, Theme};
-use gpui::{Context, Div, IntoElement, div, hsla, prelude::*, rems};
+use crate::AppView;
+use gpui::{Context, IntoElement, div, hsla, prelude::*, rems};
 
 pub fn render_interactive_ui(
     _view: &mut crate::AppView,
