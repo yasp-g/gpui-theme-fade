@@ -2,8 +2,8 @@ use anyhow::{Result, anyhow};
 use chrono::{Duration as ChronoDuration, Local, NaiveTime};
 use futures::{StreamExt, channel::mpsc};
 use gpui::{
-    div, prelude::*, Action, App, AppContext, Application, AsyncApp, Context, Entity, FocusHandle, Global, IntoElement,
-    KeyBinding, Render, SharedString, Window,
+    Action, App, AppContext, Application, AsyncApp, Context, Entity, FocusHandle, Global,
+    IntoElement, KeyBinding, Render, SharedString, Window, div, prelude::*,
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -17,15 +17,26 @@ use scheduler::{
     Color, InterpolatableTheme, ScheduleEntry, ThemeScheduler, find_previous_event_index,
     lerp_theme,
 };
-use text_input::{TextInput, Backspace, Delete, Left, Right, SelectLeft, SelectRight, SelectAll, Home, End, Paste, Cut, Copy};
+use text_input::{
+    Backspace, Copy, Cut, Delete, End, Home, Left, Paste, Right, SelectAll, SelectLeft,
+    SelectRight, TextInput,
+};
 
 // --- 1. ACTIONS ---
-
 
 #[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
 pub struct SetSleepDuration {
     pub seconds: f32,
 }
+
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
+pub struct SelectNextTheme;
+
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
+pub struct SelectPrevTheme;
+
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
+pub struct ConfirmTheme;
 
 #[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
 pub struct SetFadeDuration {
@@ -139,17 +150,6 @@ pub struct AppState {
 
 impl Global for AppState {}
 
-/// A simple function to update the active theme within the global AppState.
-fn set_active_theme<T: AppContext + gpui::BorrowAppContext>(
-    theme: InterpolatableTheme,
-    cx: &mut T,
-) {
-    cx.update_global(|app_state: &mut AppState, _| {
-        app_state.active_theme = theme;
-        // `update_global` automatically notifies and triggers a re-render.
-    });
-}
-
 // --- 5. THE MAIN UI VIEW (REFACTORED) ---
 
 pub struct AppView;
@@ -180,14 +180,75 @@ impl AppView {
 
             // Get the already-parsed theme directly from our app state
             let theme = &app_state.themes[index].interpolatable_theme;
-            set_active_theme(theme.clone(), cx);
+            app_state.active_theme = theme.clone();
         });
+    }
+
+    pub fn select_next_theme(&mut self, cx: &mut Context<Self>) {
+        cx.update_global::<AppState, _>(|app_state, _| {
+            if app_state.dropdown_open {
+                let theme_count = app_state.themes.len();
+                if theme_count > 0 {
+                    app_state.selected_theme_index =
+                        (app_state.selected_theme_index + 1) % theme_count;
+                }
+            }
+        });
+        cx.notify();
+    }
+
+    pub fn select_prev_theme(&mut self, cx: &mut Context<Self>) {
+        cx.update_global::<AppState, _>(|app_state, _| {
+            if app_state.dropdown_open {
+                let theme_count = app_state.themes.len();
+                if theme_count > 0 {
+                    app_state.selected_theme_index =
+                        (app_state.selected_theme_index + theme_count - 1) % theme_count;
+                }
+            }
+        });
+        cx.notify();
+    }
+
+    fn on_select_next_theme(
+        &mut self,
+        _: &SelectNextTheme,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.select_next_theme(cx);
+    }
+
+    fn on_select_prev_theme(
+        &mut self,
+        _: &SelectPrevTheme,
+        _: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        self.select_prev_theme(cx);
+    }
+
+    pub fn confirm_theme(&mut self, cx: &mut Context<Self>) {
+        let dropdown_open = cx.global::<AppState>().dropdown_open;
+        if dropdown_open {
+            // if open, select the current theme
+            let selected_index = cx.global::<AppState>().selected_theme_index;
+            self.select_theme(selected_index, cx);
+        } else {
+            // if closed, open it
+            self.toggle_dropdown(cx);
+        }
+        cx.notify();
+    }
+
+    fn on_confirm_theme(&mut self, _: &ConfirmTheme, _: &mut Window, cx: &mut Context<Self>) {
+        self.confirm_theme(cx);
     }
 
     fn run_simulation(&mut self, cx: &mut Context<Self>) {
         // First, get the entity handles from the global state.
-        let (sleep_input_handle, fade_input_handle, current_theme, next_theme) = cx
-            .read_global(|app_state: &AppState, _| {
+        let (sleep_input_handle, fade_input_handle, current_theme, next_theme) =
+            cx.read_global(|app_state: &AppState, _| {
                 let current_theme_index =
                     (app_state.selected_theme_index + 1) % app_state.themes.len();
                 (
@@ -243,14 +304,16 @@ impl AppView {
                         },
                     ]);
 
-                    ThemeScheduler::spawn(
-                        theme_sender.clone(),
-                        sim_schedule,
-                        AppMode::Interactive,
-                    );
+                    ThemeScheduler::spawn(theme_sender.clone(), sim_schedule, AppMode::Interactive);
 
                     while let Some(theme) = theme_receiver.next().await {
-                        async_cx.update(|cx| set_active_theme(theme, cx)).ok();
+                        async_cx
+                            .update(|cx| {
+                                cx.update_global::<AppState, _>(|app_state, _| {
+                                    app_state.active_theme = theme.clone();
+                                });
+                            })
+                            .ok();
                     }
                     info!("Simulation finished and channel closed.");
                 }
@@ -305,7 +368,10 @@ fn create_duration_input(
     tab_index: usize,
 ) -> Entity<TextInput> {
     cx.new(|cx| TextInput {
-        focus_handle: cx.focus_handle().tab_index(tab_index as isize).tab_stop(true),
+        focus_handle: cx
+            .focus_handle()
+            .tab_index(tab_index as isize)
+            .tab_stop(true),
         content: content.into(),
         placeholder: placeholder.into(),
         selected_range: 0..0,
@@ -347,6 +413,9 @@ fn main() {
             KeyBinding::new("cmd-x", Cut, Some("TextInput")),
             KeyBinding::new("tab", FocusNext, Some("InteractiveUI")),
             KeyBinding::new("shift-tab", FocusPrev, Some("InteractiveUI")),
+            KeyBinding::new("down", SelectNextTheme, Some("ThemeSelector")),
+            KeyBinding::new("up", SelectPrevTheme, Some("ThemeSelector")),
+            KeyBinding::new("enter", ConfirmTheme, Some("ThemeSelector")),
             KeyBinding::new("enter", Submit, Some("InteractiveUI")),
             KeyBinding::new("enter", Submit, Some("TextInput")),
         ]);
@@ -419,9 +488,6 @@ fn main() {
 
         // --- Action Handlers ---
 
-
-
-
         // --- Open Window and Set Window-Specific Handlers ---
         cx.spawn(move |async_cx: &mut AsyncApp| {
             let async_cx = async_cx.clone();
@@ -439,15 +505,22 @@ fn main() {
                     ThemeScheduler::spawn(theme_sender.clone(), schedule, current_app_mode);
                 }
 
-                // Listen for theme updates
                 while let Some(theme) = theme_receiver.next().await {
-                    async_cx.update(|cx| set_active_theme(theme, cx)).ok();
+                    async_cx
+                        .update(|cx| {
+                            cx.update_global::<AppState, _>(|app_state, _| {
+                                app_state.active_theme = theme.clone();
+                            });
+                        })
+                        .ok();
                 }
             }
         })
         .detach();
 
         // Open the main window.
-        let _ = cx.open_window(Default::default(), |_, cx| cx.new(|_| AppView)).unwrap();
+        let _ = cx
+            .open_window(Default::default(), |_, cx| cx.new(|_| AppView))
+            .unwrap();
     });
 }

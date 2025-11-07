@@ -1,5 +1,5 @@
-use crate::{AppView, FocusNext, FocusPrev, Submit, Theme};
-use gpui::{div, hsla, prelude::*, rems, Context, Div, IntoElement};
+use crate::{AppView, Theme};
+use gpui::{Context, Div, IntoElement, div, hsla, prelude::*, rems};
 
 // This helper function does NOT need cx, because the on_click handler provides its own.
 fn render_theme_selection_dropdown(
@@ -66,6 +66,10 @@ pub fn render_interactive_ui(
                 .child(
                     div()
                         .id("theme-selector")
+                        .key_context("ThemeSelector")
+                        .on_action(cx.listener(AppView::on_confirm_theme))
+                        .on_action(cx.listener(AppView::on_select_next_theme))
+                        .on_action(cx.listener(AppView::on_select_prev_theme))
                         .relative()
                         .child(
                             div()
