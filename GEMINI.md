@@ -193,3 +193,16 @@ This section documents specific, recurring GPUI API issues and their correct sol
   ) -> impl IntoElement
   ```
 This pattern ensures that components are correctly wired to the application's specific `AppView` and its context.
+
+### 2. Manual Scrollbar Implementation
+
+- **Problem:** Applying `.overflow_y_scroll()` to a `div` makes it scrollable with a mouse wheel, but no visible scrollbar (thumb or track) appears. There are no simple style properties like `scrollbar_color` to make it visible.
+
+- **Discovery:** The base `gpui` framework does not automatically render a scrollbar UI. It only provides the scrolling *mechanics*. The developer is responsible for implementing the visual scrollbar as a separate component. The `data_table.rs` example in the GPUI source code is the canonical example of this pattern.
+
+- **Solution:**
+    1.  **Create a `ScrollHandle`:** State that needs to persist for the scrollable element (like the scroll offset) requires a handle. This handle should be stored in a persistent location, such as the `AppState` global, and passed down to the component that needs to scroll.
+    2.  **Track the Element:** Use the `.track_scroll(&scroll_handle)` method on the scrollable `div` to associate it with the handle.
+    3.  **Build a Scrollbar Component:** Create a separate component (e.g., `render_scrollbar`) that also takes the `ScrollHandle`.
+    4.  **Render Manually:** Inside this component, read the state from the handle (`scroll_handle.bounds()`, `scroll_handle.max_offset()`) to calculate the size and position of the scrollbar thumb. Render the thumb as a `div` with an absolute position.
+    5.  **Layout:** Render the scrollable `div` and the `render_scrollbar` component as siblings inside a parent `div` that has `relative()` positioning.
