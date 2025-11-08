@@ -2,7 +2,7 @@ use chrono::{Duration as ChronoDuration, Local};
 use futures::{StreamExt, channel::mpsc};
 use gpui::{
     Action, App, AppContext, Application, AsyncApp, Context, Entity, FocusHandle, Global,
-    IntoElement, KeyBinding, Render, SharedString, Window, div, prelude::*,
+    IntoElement, KeyBinding, Render, ScrollHandle, SharedString, Window, div, prelude::*,
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -13,7 +13,6 @@ pub mod scheduler;
 pub mod text_input;
 pub mod ui;
 pub mod components;
-use crate::components::popover::Popover;
 use scheduler::{
     Color, InterpolatableTheme, ScheduleEntry, ThemeScheduler,
 };
@@ -141,6 +140,8 @@ pub struct AppState {
     pub fade_duration_input: Entity<TextInput>,
     pub theme_selector_focus_handle: FocusHandle,
     pub end_theme_selector_focus_handle: FocusHandle,
+    pub start_theme_scroll_handle: ScrollHandle,
+    pub end_theme_scroll_handle: ScrollHandle,
     pub run_simulation_focus_handle: FocusHandle,
     pub sleep_input_is_valid: bool,
     pub fade_input_is_valid: bool,
@@ -483,8 +484,9 @@ fn main() {
         let fade_duration_input = create_duration_input(cx, "10", "Fade seconds...", 4);
         let theme_selector_focus_handle = cx.focus_handle().tab_index(1).tab_stop(true);
         let end_theme_selector_focus_handle = cx.focus_handle().tab_index(2).tab_stop(true);
+        let start_theme_scroll_handle = ScrollHandle::new();
+        let end_theme_scroll_handle = ScrollHandle::new();
         let run_simulation_focus_handle = cx.focus_handle().tab_index(5).tab_stop(true);
-        let popover = Popover::new(cx);
 
         cx.set_global(AppState {
             app_mode,
@@ -495,6 +497,8 @@ fn main() {
             fade_duration_input,
             theme_selector_focus_handle,
             end_theme_selector_focus_handle,
+            start_theme_scroll_handle,
+            end_theme_scroll_handle,
             run_simulation_focus_handle,
             sleep_input_is_valid: true,
             fade_input_is_valid: true,
