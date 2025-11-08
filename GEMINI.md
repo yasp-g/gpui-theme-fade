@@ -1,5 +1,13 @@
 The overarching purpose of the project is to help me learn Rust and broaden my ability as a developer. I have strong Python experience and also have some experience with other languages like C++ and Javascript. But, I've never worked with Rust before this project, so please keep my experience level and background that i bring in mind and please be sure to take every opportunity to help me learn Rust as best and fast as possible. Although your main goal is to help me develop the app explained below, you will also take on the roll of teacher and mentor me as i learn Rust.
 
+---
+## Core Development Principle: Trust the Source
+
+**GPUI is in active development.** This means its API can change, and my internal knowledge may become outdated. To ensure accuracy and avoid repeated errors, the primary source of truth for GPUI development must be the existing, working code in this project and the GPUI source code cloned in `sandbox/gpui-source/gpui/`.
+
+When encountering a compilation error or implementing a new feature, the first step is always to **look for existing patterns within the project**. If a pattern is discovered or a new solution is found, **this `GEMINI.md` file must be updated** to document the finding for future reference.
+---
+
 # GPUI Theme Scheduler
 
 This project serves as a development environment for a theme scheduler designed for the Zed code editor. It demonstrates how to dynamically switch between themes with a smooth, animated transition, and will culminate in a demo application.
@@ -152,3 +160,36 @@ pub fn my_method(&mut self, cx: &mut Context<Self>) {
     cx.refresh(); // COMPILE ERROR: `refresh` not found on `Context<Self>`
 }
 ```
+---
+## GPUI API Notes
+
+This section documents specific, recurring GPUI API issues and their correct solutions as discovered during development.
+
+### 1. Unresolved Imports: `gpui::View` and `gpui::WindowContext`
+
+- **Problem:** A recurring compilation error `error[E0432]: unresolved imports` occurs when trying to use `gpui::View` or `gpui::WindowContext` in the function signatures of component render functions or their callbacks. These types are not available in the public API in the way they might seem.
+
+- **Solution:** Do not use generic type parameters like `<V: View>` for component functions. Instead, use the concrete view type directly (e.g., `AppView`). For contexts and callbacks, use `Context<AppView>` instead of `WindowContext`.
+
+- **Example (Correct):** The `render_dropdown` component's `on_toggle` callback signature correctly uses `AppView` and `Context<AppView>`:
+  ```rust
+  // In src/components/dropdown.rs
+  pub fn render_dropdown(
+      // ...
+      on_toggle: impl Fn(&mut AppView, &ClickEvent, &mut Window, &mut Context<AppView>) + 'static,
+      // ...
+      cx: &mut Context<AppView>,
+  ) -> impl IntoElement
+  ```
+
+- **Example (Incorrect):**
+  ```rust
+  // This will not compile.
+  pub fn render_dropdown<V: View>(
+      // ...
+      on_toggle: impl Fn(&mut V, &mut WindowContext) + 'static,
+      // ...
+      cx: &mut Context<V>,
+  ) -> impl IntoElement
+  ```
+This pattern ensures that components are correctly wired to the application's specific `AppView` and its context.
