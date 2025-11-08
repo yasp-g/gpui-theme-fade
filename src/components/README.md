@@ -4,8 +4,10 @@ This document outlines the plan for extracting reusable UI components from `src/
 
 ## Current Status
 
-*   `src/ui.rs` contains the `render_interactive_ui` function, which is currently quite large and contains several distinct UI blocks that can be generalized.
-*   `src/components/popover.rs` already exists as an initial component.
+*   `src/ui.rs` contains the `render_interactive_ui` function, which is being refactored by extracting distinct UI blocks into reusable components.
+*   `src/components/popover.rs` exists and has been updated to align with the current GPUI API.
+*   `src/components/button.rs` has been created and integrated.
+*   `src/components/dropdown.rs` has been created and integrated, replacing the theme selectors in the main UI.
 
 ## Refactoring Plan
 
@@ -19,9 +21,9 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ### 2. Dropdown (`dropdown.rs`)
 
-*   **Description:** A generic component for a clickable trigger that toggles the visibility of arbitrary dropdown content. It will handle common styling, focus management, and keyboard navigation actions. This will replace the duplicated "Start Theme Selector" and "End Theme Selector" blocks, which will then utilize this generic dropdown.
-*   **Implementation Details:** Will be a public function (`render_dropdown`) that takes parameters such as `id_prefix`, `trigger_content` (an `impl IntoElement` for the clickable part), `dropdown_content` (an `impl IntoElement` for the content shown when open), `is_open`, `focus_handle`, and various `on_...` callback closures for toggling and keyboard actions.
-*   **Priority:** Medium (addresses significant code duplication and provides a highly reusable component).
+*   **Description:** A generic component for a clickable trigger that toggles the visibility of arbitrary dropdown content. It will handle common styling, focus management, and keyboard navigation actions. This has replaced the duplicated "Start Theme Selector" and "End Theme Selector" blocks.
+*   **Implementation Details:** A public function (`render_dropdown`) that takes parameters such as static IDs, `is_open`, `focus_handle`, and various `on_...` callback closures for toggling and selection.
+*   **Priority:** Complete.
 
 ### 3. Validated Text Input (`validated_text_input.rs`)
 
@@ -43,4 +45,4 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ## Next Steps
 
-We will proceed with extracting these components one by one, starting with the `Theme Selector`, and updating `src/ui.rs` to use the new components after each extraction.
+We will continue extracting components one by one. The next component to be extracted and integrated is the `Validated Text Input`.
