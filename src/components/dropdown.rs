@@ -84,6 +84,9 @@ pub fn render_dropdown(
                                 .child(theme.name.clone())
                         })),
                 )
-                .child(render_scrollbar(scroll_handle, cx)),
+                .child(render_scrollbar(
+                    (scroll_container_id, 1 as usize),
+                    scroll_handle,
+                )),
         ))
 }

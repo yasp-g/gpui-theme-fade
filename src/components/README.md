@@ -28,8 +28,8 @@ The following components have been identified for extraction from `src/ui.rs`. T
 ### 3. Scrollbar (`scrollbar.rs`)
 
 *   **Description:** A manual scrollbar implementation (thumb and track) that can be rendered alongside a scrollable `div`. This is necessary because the base GPUI `div` does not automatically render a visible scrollbar.
-*   **Implementation Details:** A public function (`render_scrollbar`) that takes a `ScrollHandle` to calculate the thumb's size and position. The initial version has a hardcoded color and does not yet support dragging.
-*   **Priority:** Complete (initial implementation).
+*   **Implementation Details:** A public function (`render_scrollbar`) that returns a custom `ScrollbarElement` implementing the `gpui::Element` trait. It calculates the thumb's size and position based on a `ScrollHandle` and handles drag events to update the scroll offset. The initial version has a hardcoded color and does not yet support theme integration.
+*   **Priority:** Complete (drag functionality implemented).
 
 ### 4. Form Field (`form_field.rs`)
 
@@ -51,4 +51,4 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ## Next Steps
 
-The initial version of the `Scrollbar` component is complete. The next step is to enhance it by adding drag-to-scroll functionality and integrating colors from the active theme.
+The drag-to-scroll functionality for the `Scrollbar` component is complete. The next step is to integrate colors from the active theme.
