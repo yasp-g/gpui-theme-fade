@@ -25,11 +25,11 @@ The following components have been identified for extraction from `src/ui.rs`. T
 *   **Implementation Details:** A public function (`render_dropdown`) that takes parameters such as static IDs, `is_open`, `focus_handle`, and various `on_...` callback closures for toggling and selection.
 *   **Priority:** Complete.
 
-### 3. Validated Text Input (`validated_text_input.rs`)
+### 3. Form Field (`form_field.rs`)
 
-*   **Description:** A component for displaying a label alongside a `TextInput` view, with a border that visually indicates validity (e.g., green for valid, red for invalid). This will replace the "Sleep Duration (s):" and "Fade Duration (s):" input blocks.
-*   **Implementation Details:** Will likely be a public function (`render_validated_text_input`) taking a label, the `TextInput` view, and a boolean `is_valid` flag.
-*   **Priority:** Medium (addresses minor code duplication and consistent styling).
+*   **Description:** A generic wrapper component that provides consistent styling for a label paired with an input control (like a `TextInput` or `Dropdown`). It renders a border around its child that visually indicates a validation state (e.g., green for valid, red for invalid).
+*   **Implementation Details:** Will be a public function (`render_form_field`) that takes a `label`, an `is_valid` flag, and accepts any `impl IntoElement` as a child. This allows it to wrap any kind of control.
+*   **Priority:** Medium (promotes consistency and reusability for all input fields).
 
 ### 4. Panel Container (`panel.rs`)
 
@@ -45,4 +45,4 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ## Next Steps
 
-We will continue extracting components one by one. The next component to be extracted and integrated is the `Validated Text Input`.
+We will continue extracting components one by one. The next component to be extracted and integrated is the `Form Field`.
