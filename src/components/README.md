@@ -25,19 +25,25 @@ The following components have been identified for extraction from `src/ui.rs`. T
 *   **Implementation Details:** A public function (`render_dropdown`) that takes parameters such as static IDs, `is_open`, `focus_handle`, and various `on_...` callback closures for toggling and selection.
 *   **Priority:** Complete.
 
-### 3. Form Field (`form_field.rs`)
+### 3. Scrollbar (`scrollbar.rs`)
+
+*   **Description:** A manual scrollbar implementation (thumb and track) that can be rendered alongside a scrollable `div`. This is necessary because the base GPUI `div` does not automatically render a visible scrollbar.
+*   **Implementation Details:** A public function (`render_scrollbar`) that takes a `ScrollHandle` to calculate the thumb's size and position. The initial version has a hardcoded color and does not yet support dragging.
+*   **Priority:** Complete (initial implementation).
+
+### 4. Form Field (`form_field.rs`)
 
 *   **Description:** A generic wrapper component that provides consistent styling for a label paired with an input control (like a `TextInput` or `Dropdown`). It renders a border around its child that visually indicates a validation state (e.g., green for valid, red for invalid).
 *   **Implementation Details:** Will be a public function (`render_form_field`) that takes a `label`, an `is_valid` flag, and accepts any `impl IntoElement` as a child. This allows it to wrap any kind of control.
 *   **Priority:** Medium (promotes consistency and reusability for all input fields).
 
-### 4. Panel Container (`panel.rs`)
+### 5. Panel Container (`panel.rs`)
 
 *   **Description:** A reusable container component for grouping related UI elements, featuring consistent styling such as borders, padding, and rounded corners. This will replace the "Left Panel" and "Right Panel" containers.
 *   **Implementation Details:** Will likely be a public function (`render_panel`) that accepts an `id` and a collection of child elements (`impl IntoElement` or a closure returning children).
 *   **Priority:** Low (primarily for structural organization and consistent container styling).
 
-### 5. Header (`header.rs`)
+### 6. Header (`header.rs`)
 
 *   **Description:** A simple component for displaying the main title of the application.
 *   **Implementation Details:** Will likely be a public function (`render_header`) taking the title string.
@@ -45,4 +51,4 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ## Next Steps
 
-We will continue extracting components one by one. The next component to be extracted and integrated is the `Form Field`.
+The initial version of the `Scrollbar` component is complete. The next step is to enhance it by adding drag-to-scroll functionality and integrating colors from the active theme.
