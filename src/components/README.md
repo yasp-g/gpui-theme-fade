@@ -21,7 +21,7 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ### 2. Dropdown (`dropdown.rs`)
 
-*   **Description:** A generic component for a clickable trigger that toggles the visibility of arbitrary dropdown content. It will handle common styling, focus management, and keyboard navigation actions. This has replaced the duplicated "Start Theme Selector" and "End Theme Selector" blocks.
+*   **Description:** A generic component for a clickable trigger that toggles the visibility of arbitrary dropdown content. It will handle common styling, focus management, and keyboard navigation actions. This has replaced the duplicated "Start Theme Selector" and "End Theme Selector" blocks. **Note:** This component is being refactored to use a true modal overlay system to fix an event-capturing bug.
 *   **Implementation Details:** A public function (`render_dropdown`) that takes parameters such as static IDs, `is_open`, `focus_handle`, a slice of `disabled_indices`, and various `on_...` callback closures for toggling and selection. It now includes auto-scrolling for keyboard navigation to keep the highlighted item in view, and "Escape" key handling to close the dropdown.
 *   **Priority:** Complete.
 
@@ -51,4 +51,4 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ## Next Steps
 
-The next step is to create and implement the `gradient_bar` component to visualize theme transitions in the "Color Palette" area of the UI.
+The immediate next step is to refactor the `dropdown` and `popover` components to use GPUI's modal overlay system (`window.present_modal`). This is a high-priority task to fix a critical bug where mouse clicks "pass through" the dropdown menu. The `gradient_bar` implementation will be postponed until this is complete.
