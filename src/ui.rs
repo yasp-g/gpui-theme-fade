@@ -11,10 +11,6 @@ pub fn render_interactive_ui(
     let active_theme = &app_state.active_theme;
     let surface_background = active_theme.0.get("surface.background").unwrap().hsla;
     let text_color = active_theme.0.get("text").unwrap().hsla;
-    let focus_color = active_theme
-        .0
-        .get("border.focused")
-        .map_or(gpui::blue(), |color| color.hsla);
 
     div()
         .key_context("InteractiveUI")
@@ -68,9 +64,9 @@ pub fn render_interactive_ui(
                                     app_state.start_dropdown_open,
                                     &app_state.theme_selector_focus_handle,
                                     &app_state.start_theme_scroll_handle,
-                                    focus_color,
                                     &app_state.themes,
                                     app_state.start_theme_index,
+                                    active_theme,
                                     |view, _, _, cx| view.toggle_start_dropdown(cx),
                                     |index, view, _, _, cx| view.select_start_theme(index, cx),
                                     cx,
@@ -92,9 +88,9 @@ pub fn render_interactive_ui(
                                     app_state.end_dropdown_open,
                                     &app_state.end_theme_selector_focus_handle,
                                     &app_state.end_theme_scroll_handle,
-                                    focus_color,
                                     &app_state.themes,
                                     app_state.end_theme_index,
+                                    active_theme,
                                     |view, _, _, cx| view.toggle_end_dropdown(cx),
                                     |index, view, _, _, cx| view.select_end_theme(index, cx),
                                     cx,

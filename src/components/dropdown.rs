@@ -1,10 +1,10 @@
 use crate::{
-    components::{popover::render_popover, scrollbar::render_scrollbar},
     AppView,
+    components::{popover::render_popover, scrollbar::render_scrollbar},
+    theme::{InterpolatableTheme, Theme},
 };
 use gpui::{
-    div, hsla, prelude::*, rems, ClickEvent, Context, FocusHandle, IntoElement, ScrollHandle,
-    Window,
+    ClickEvent, Context, FocusHandle, IntoElement, ScrollHandle, Window, div, prelude::*, rems,
 };
 
 pub fn render_dropdown(
@@ -15,16 +15,32 @@ pub fn render_dropdown(
     is_open: bool,
     focus_handle: &FocusHandle,
     scroll_handle: &ScrollHandle,
-    focus_color: gpui::Hsla,
-    themes: &[crate::Theme],
+    themes: &[Theme],
     selected_index: usize,
+    theme: &InterpolatableTheme,
     on_toggle: impl Fn(&mut AppView, &ClickEvent, &mut Window, &mut Context<AppView>) + 'static,
     on_select: impl Fn(usize, &mut AppView, &ClickEvent, &mut Window, &mut Context<AppView>)
-        + 'static
-        + Clone,
+    + 'static
+    + Clone,
     cx: &mut Context<AppView>,
 ) -> impl IntoElement {
     let selected_theme_name = themes[selected_index].name.clone();
+
+    let text_color = theme.0.get("text").map_or(gpui::black(), |c| c.hsla);
+    let border_color = theme.0.get("border").map_or(gpui::black(), |c| c.hsla);
+    let focus_color = theme
+        .0
+        .get("border.focused")
+        .map_or(gpui::blue(), |c| c.hsla);
+    let popover_bg = theme
+        .0
+        .get("elevated_surface.background")
+        .map_or(gpui::black(), |c| c.hsla);
+    let element_hover = theme.0.get("element.hover").map_or(gpui::red(), |c| c.hsla);
+    let element_selected = theme
+        .0
+        .get("element.selected")
+        .map_or(gpui::blue(), |c| c.hsla);
 
     div()
         .id(selector_id)
@@ -43,9 +59,9 @@ pub fn render_dropdown(
                 .gap_2()
                 .p_2()
                 .border_1()
-                .border_color(hsla(0., 0., 1., 0.2))
+                .border_color(border_color)
                 .rounded_md()
-                .hover(|style| style.bg(hsla(0., 0., 1., 0.1)))
+                .hover(|style| style.bg(element_hover))
                 .on_click(cx.listener(on_toggle))
                 .child(selected_theme_name)
                 .child(div().child("▼")),
@@ -65,28 +81,27 @@ pub fn render_dropdown(
                         .overflow_y_scroll()
                         .border_1()
                         .border_color(focus_color)
-                        .bg(hsla(0., 0., 0., 0.8))
-                        .text_color(hsla(0., 0., 1., 0.8))
+                        .bg(popover_bg)
+                        .text_color(text_color)
                         .rounded_md()
                         .shadow_lg()
-                        .children(themes.iter().enumerate().map(|(index, theme)| {
+                        .children(themes.iter().enumerate().map(|(index, theme_item)| {
                             let on_select = on_select.clone();
                             div()
                                 .id((item_id_prefix, index))
                                 .p_2()
-                                .hover(|style| style.bg(hsla(0., 0., 1., 0.1)))
-                                .when(index == selected_index, |style| {
-                                    style.bg(hsla(0., 0., 1., 0.2))
-                                })
+                                .hover(|style| style.bg(element_hover))
+                                .when(index == selected_index, |style| style.bg(element_selected))
                                 .on_click(cx.listener(move |view, ev, win, cx| {
                                     on_select(index, view, ev, win, cx);
                                 }))
-                                .child(theme.name.clone())
+                                .child(theme_item.name.clone())
                         })),
                 )
                 .child(render_scrollbar(
                     (scroll_container_id, 1 as usize),
                     scroll_handle,
+                    theme,
                 )),
         ))
 }

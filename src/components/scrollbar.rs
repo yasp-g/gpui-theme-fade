@@ -1,18 +1,32 @@
-use crate::AppView;
+use crate::theme::InterpolatableTheme;
 use gpui::{
-    prelude::*, px, size, point, quad, App, Bounds, Element, ElementId,
+    px, size, point, quad, App, Bounds, Element, ElementId,
     GlobalElementId, Hsla, IntoElement, LayoutId, MouseButton, MouseDownEvent, MouseMoveEvent,
-    MouseUpEvent, Pixels, Point, Position, ScrollHandle, Style, Window, hsla, IsZero, InspectorElementId,
+    MouseUpEvent, Pixels, Point, Position, ScrollHandle, Style, Window, IsZero, InspectorElementId,
 };
 
 // --- 1. Public Function ---
 pub fn render_scrollbar(
     id: impl Into<ElementId>,
     scroll_handle: &ScrollHandle,
+    theme: &InterpolatableTheme,
 ) -> ScrollbarElement {
+    let default_hsla = theme.0.get("text").map_or(gpui::black(), |c| c.hsla);
     ScrollbarElement {
         id: id.into(),
         scroll_handle: scroll_handle.clone(),
+        thumb_background: theme
+            .0
+            .get("scrollbar.thumb.background")
+            .map_or(default_hsla, |c| c.hsla),
+        thumb_hover_background: theme
+            .0
+            .get("scrollbar.thumb.hover_background")
+            .map_or(default_hsla, |c| c.hsla),
+        thumb_border: theme
+            .0
+            .get("scrollbar.thumb.border")
+            .map_or(default_hsla, |c| c.hsla),
     }
 }
 
@@ -42,6 +56,9 @@ struct ScrollbarState {
 pub struct ScrollbarElement {
     id: ElementId,
     scroll_handle: ScrollHandle,
+    thumb_background: Hsla,
+    thumb_hover_background: Hsla,
+    thumb_border: Hsla,
 }
 
 impl IntoElement for ScrollbarElement {
@@ -149,17 +166,17 @@ impl Element for ScrollbarElement {
         let current_state = state_entity.read(cx).clone();
 
         let bg_color = match current_state.thumb_state {
-            ThumbState::Inactive => hsla(0.0, 0.0, 0.5, 0.5),
-            ThumbState::Hovered => hsla(0.0, 0.0, 0.6, 0.6),
-            ThumbState::Dragging { .. } => hsla(0.0, 0.0, 0.7, 0.7),
+            ThumbState::Inactive => self.thumb_background,
+            ThumbState::Hovered => self.thumb_hover_background,
+            ThumbState::Dragging { .. } => self.thumb_hover_background,
         };
 
         window.paint_quad(quad(
             prepaint_state.thumb_bounds,
             gpui::Corners::all(px(4.0)),
             bg_color,
-            gpui::Edges::default(),
-            gpui::black(),
+            gpui::Edges::all(px(1.0)),
+            self.thumb_border,
             gpui::BorderStyle::default(),
         ));
 
@@ -183,7 +200,7 @@ impl Element for ScrollbarElement {
         });
 
         let state_entity_for_up = state_entity.clone();
-        let prepaint_state_for_up = prepaint_state.clone();
+        let _prepaint_state_for_up = prepaint_state.clone();
         window.on_mouse_event(move |event: &MouseUpEvent, phase, window, cx| {
             if phase.bubble() && event.button == MouseButton::Left {
                 if let ThumbState::Dragging { .. } = state_entity_for_up.read(cx).thumb_state {
