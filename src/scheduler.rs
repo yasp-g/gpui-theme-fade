@@ -1,91 +1,12 @@
-use anyhow::{anyhow, Result};
 use chrono::{Duration, Local, NaiveTime};
 use futures::channel::mpsc;
-use gpui::{hsla, rgba, Hsla, Rgba};
-use once_cell::sync::Lazy;
-use regex::Regex;
-use std::{collections::HashMap, str::FromStr, sync::Arc, thread, time::Duration as StdDuration};
+use std::{sync::Arc, thread, time::Duration as StdDuration};
 use tracing::info;
 
-use crate::AppMode; // New import
-
-// --- THEME & COLOR DEFINITIONS ---
-
-#[derive(Clone, Copy, Debug)]
-pub struct Color {
-    pub rgba: Rgba,
-    pub hsla: Hsla,
-}
-
-impl Default for Color {
-    fn default() -> Self {
-        Color {
-            rgba: rgba(0xff00ff),
-            hsla: hsla(0.83, 1.0, 0.5, 1.0),
-        }
-    }
-}
-
-static COLOR_REGEX: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^#([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})([0-9a-fA-F]{2})?$").unwrap()
-});
-
-impl FromStr for Color {
-    type Err = anyhow::Error;
-
-    fn from_str(s: &str) -> Result<Self> {
-        let caps = COLOR_REGEX
-            .captures(s)
-            .ok_or_else(|| anyhow!("Invalid hex color: {}", s))?;
-
-        let r = u8::from_str_radix(caps.get(1).unwrap().as_str(), 16)?;
-        let g = u8::from_str_radix(caps.get(2).unwrap().as_str(), 16)?;
-        let b = u8::from_str_radix(caps.get(3).unwrap().as_str(), 16)?;
-        let a = caps
-            .get(4)
-            .map_or(Ok(255), |m| u8::from_str_radix(m.as_str(), 16))?;
-
-        let rgba = Rgba {
-            r: r as f32 / 255.0,
-            g: g as f32 / 255.0,
-            b: b as f32 / 255.0,
-            a: a as f32 / 255.0,
-        };
-        let hsla = Hsla::from(rgba);
-        Ok(Color { rgba, hsla })
-    }
-}
-
-pub fn lerp_color(a: Color, b: Color, t: f32) -> Color {
-    let t = t.clamp(0.0, 1.0);
-    let hsla = Hsla {
-        h: a.hsla.h + (b.hsla.h - a.hsla.h) * t,
-        s: a.hsla.s + (b.hsla.s - a.hsla.s) * t,
-        l: a.hsla.l + (b.hsla.l - a.hsla.l) * t,
-        a: a.hsla.a + (b.hsla.a - a.hsla.a) * t,
-    };
-    let rgba = Rgba::from(hsla);
-    Color { rgba, hsla }
-}
-
-#[derive(Clone, Default, Debug)]
-pub struct InterpolatableTheme(pub HashMap<String, Color>);
-
-pub fn lerp_theme(a: &InterpolatableTheme, b: &InterpolatableTheme, t: f32) -> InterpolatableTheme {
-    let mut new_theme = InterpolatableTheme::default();
-
-    for (key, color_a) in &a.0 {
-        if let Some(color_b) = b.0.get(key) {
-            new_theme
-                .0
-                .insert(key.clone(), lerp_color(*color_a, *color_b, t));
-        } else {
-            new_theme.0.insert(key.clone(), *color_a);
-        }
-    }
-    new_theme
-}
-
+use crate::{
+    theme::{lerp_theme, InterpolatableTheme},
+    AppMode,
+};
 
 // --- THEME SCHEDULER SERVICE ---
 

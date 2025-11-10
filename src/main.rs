@@ -6,20 +6,21 @@ use gpui::{
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
-use std::{collections::HashMap, fs, str::FromStr, sync::Arc};
+use std::{fs, sync::Arc};
 use tracing::info;
 
 pub mod scheduler;
 pub mod text_input;
 pub mod ui;
 pub mod components;
-use scheduler::{
-    Color, InterpolatableTheme, ScheduleEntry, ThemeScheduler,
-};
+pub mod theme;
+
+use scheduler::{ScheduleEntry, ThemeScheduler};
 use text_input::{
     Backspace, Copy, Cut, Delete, End, Home, Left, Paste, Right, SelectAll, SelectLeft,
     SelectRight, TextInput,
 };
+use theme::{flatten_colors, InterpolatableTheme, Theme, ZedThemeFile};
 
 // --- 1. ACTIONS ---
 
@@ -61,69 +62,6 @@ pub enum AppMode {
 impl Default for AppMode {
     fn default() -> Self {
         AppMode::Scheduler
-    }
-}
-
-// New struct to hold a theme and its name
-#[derive(Clone, Debug)]
-pub struct Theme {
-    pub name: String,
-    pub interpolatable_theme: InterpolatableTheme,
-}
-
-// --- 2. JSON PARSING STRUCTS ---
-
-/// These structs mirror the Zed theme JSON schema.
-#[derive(Deserialize, Debug)]
-struct ZedThemeFile {
-    themes: Vec<ThemeDefinition>,
-}
-
-#[derive(Deserialize, Debug)]
-struct ThemeDefinition {
-    name: String,
-    style: ThemeStyle,
-}
-
-/// Use a HashMap to capture all unknown keys in the "style" block.
-#[derive(Deserialize, Debug)]
-struct ThemeStyle {
-    #[serde(flatten)]
-    colors: HashMap<String, serde_json::Value>,
-}
-
-// Helper function to recursively flatten nested color objects
-fn flatten_colors(
-    colors: &HashMap<String, serde_json::Value>,
-    interpolatable_theme: &mut InterpolatableTheme,
-    prefix: &str,
-) {
-    for (key, value) in colors {
-        let new_key = if prefix.is_empty() {
-            key.clone()
-        } else {
-            format!("{}.{}", prefix, key)
-        };
-
-        if let Some(hex_string) = value.as_str() {
-            match Color::from_str(hex_string) {
-                Ok(color) => {
-                    interpolatable_theme.0.insert(new_key, color);
-                }
-                Err(e) => {
-                    tracing::warn!(
-                        "Failed to parse color for key '{}': {} (value: '{}')",
-                        new_key,
-                        e,
-                        hex_string
-                    );
-                }
-            }
-        } else if let Some(nested_obj) = value.as_object() {
-            let nested_map: HashMap<String, serde_json::Value> =
-                nested_obj.clone().into_iter().collect();
-            flatten_colors(&nested_map, interpolatable_theme, &new_key);
-        }
     }
 }
 
