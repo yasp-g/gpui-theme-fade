@@ -55,6 +55,7 @@ pub fn render_dropdown(
         .on_action(cx.listener(AppView::on_confirm_theme))
         .on_action(cx.listener(AppView::on_select_next_theme))
         .on_action(cx.listener(AppView::on_select_prev_theme))
+        .on_action(cx.listener(AppView::on_cancel))
         .relative()
         .child(
             div()

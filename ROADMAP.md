@@ -85,9 +85,9 @@ This approach allows us to use the real scheduler code in a controlled test envi
   - **Focus Management:** `[x]` Implemented `Tab` and `Shift+Tab` functionality to cycle focus between all interactive elements.
   - **Global "Enter" Key Submission:** `[x]` Pressing "Enter" in text fields or on the "Run Simulation" button correctly triggers the simulation.
   - **Dropdown Keyboard Control:** `[x]` Implemented full keyboard control for the theme selector dropdown.
-    - `[x]` `Up Arrow` and `Down Arrow` keys now navigate the list of themes when the dropdown is open.
+    - `[x]` `Up Arrow` and `Down Arrow` keys now navigate the list of themes when the dropdown is open, with **auto-scrolling** to keep the highlighted item in view.
     - `[x]` `Enter` key now opens the dropdown, or selects the highlighted theme and closes it.
-    - `[ ]` `Escape` key handling to close the dropdown has not been implemented yet.
+    - `[x]` `Escape` key handling to close the dropdown has not been implemented yet.
 
 - **Focus Indication:** To improve UI clarity, visual indicators will be added for focused elements. Currently, the "Run Simulation" button and theme selector dropdown do not visually change when they receive focus via keyboard navigation.
   - **Implementation:** The `.focus()` style modifier will be applied to these elements in `src/ui.rs`. When focused, their border color will be updated to use the `border_focused` color from the active theme, making the indicator theme-aware.

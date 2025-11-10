@@ -52,6 +52,9 @@ pub struct FocusNext;
 #[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
 pub struct FocusPrev;
 
+#[derive(Clone, PartialEq, Action)]
+pub struct Cancel;
+
 // New enum for application mode
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum AppMode {
@@ -370,6 +373,10 @@ impl AppView {
         cx.notify();
     }
 
+    fn on_cancel(&mut self, _: &Cancel, _window: &mut Window, cx: &mut Context<Self>) {
+        self.close_dropdowns(cx);
+    }
+
     fn run_simulation(&mut self, cx: &mut Context<Self>) {
         // First, get the necessary state from the global state.
         let (sleep_input_handle, fade_input_handle, start_theme, end_theme) = cx.read_global(
@@ -595,6 +602,7 @@ fn main() {
             KeyBinding::new("down", SelectNextTheme, Some("ThemeSelector")),
             KeyBinding::new("up", SelectPrevTheme, Some("ThemeSelector")),
             KeyBinding::new("enter", ConfirmTheme, Some("ThemeSelector")),
+            KeyBinding::new("escape", Cancel, Some("ThemeSelector")),
             KeyBinding::new("enter", Submit, Some("InteractiveUI")),
             KeyBinding::new("enter", Submit, Some("TextInput")),
         ]);
