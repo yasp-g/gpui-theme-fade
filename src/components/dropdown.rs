@@ -52,9 +52,11 @@ pub fn render_dropdown(
         .child(
             div()
                 .id(button_id)
+                .w_full()
                 .track_focus(focus_handle)
                 .focus(|s| s.border_color(focus_color))
                 .flex()
+                .justify_between()
                 .items_center()
                 .gap_2()
                 .p_2()

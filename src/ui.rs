@@ -56,21 +56,23 @@ pub fn render_interactive_ui(
                                 .justify_between()
                                 .items_center()
                                 .child(div().child("Start Theme:"))
-                                .child(render_dropdown(
-                                    "start-theme-selector",
-                                    "start-theme-button",
-                                    "start-theme",
-                                    "start-theme-scroll",
-                                    app_state.start_dropdown_open,
-                                    &app_state.theme_selector_focus_handle,
-                                    &app_state.start_theme_scroll_handle,
-                                    &app_state.themes,
-                                    app_state.start_theme_index,
-                                    active_theme,
-                                    |view, _, _, cx| view.toggle_start_dropdown(cx),
-                                    |index, view, _, _, cx| view.select_start_theme(index, cx),
-                                    cx,
-                                )),
+                                .child(
+                                    div().w(rems(12.0)).child(render_dropdown(
+                                        "start-theme-selector",
+                                        "start-theme-button",
+                                        "start-theme",
+                                        "start-theme-scroll",
+                                        app_state.start_dropdown_open,
+                                        &app_state.theme_selector_focus_handle,
+                                        &app_state.start_theme_scroll_handle,
+                                        &app_state.themes,
+                                        app_state.start_theme_index,
+                                        active_theme,
+                                        |view, _, _, cx| view.toggle_start_dropdown(cx),
+                                        |index, view, _, _, cx| view.select_start_theme(index, cx),
+                                        cx,
+                                    )),
+                                ),
                         )
                         .child(
                             // End Theme Selector
@@ -80,21 +82,23 @@ pub fn render_interactive_ui(
                                 .justify_between()
                                 .items_center()
                                 .child(div().child("End Theme:"))
-                                .child(render_dropdown(
-                                    "end-theme-selector",
-                                    "end-theme-button",
-                                    "end-theme",
-                                    "end-theme-scroll",
-                                    app_state.end_dropdown_open,
-                                    &app_state.end_theme_selector_focus_handle,
-                                    &app_state.end_theme_scroll_handle,
-                                    &app_state.themes,
-                                    app_state.end_theme_index,
-                                    active_theme,
-                                    |view, _, _, cx| view.toggle_end_dropdown(cx),
-                                    |index, view, _, _, cx| view.select_end_theme(index, cx),
-                                    cx,
-                                )),
+                                .child(
+                                    div().w(rems(12.0)).child(render_dropdown(
+                                        "end-theme-selector",
+                                        "end-theme-button",
+                                        "end-theme",
+                                        "end-theme-scroll",
+                                        app_state.end_dropdown_open,
+                                        &app_state.end_theme_selector_focus_handle,
+                                        &app_state.end_theme_scroll_handle,
+                                        &app_state.themes,
+                                        app_state.end_theme_index,
+                                        active_theme,
+                                        |view, _, _, cx| view.toggle_end_dropdown(cx),
+                                        |index, view, _, _, cx| view.select_end_theme(index, cx),
+                                        cx,
+                                    )),
+                                ),
                         )
                         .child(
                             div()
