@@ -22,7 +22,7 @@ The following components have been identified for extraction from `src/ui.rs`. T
 ### 2. Dropdown (`dropdown.rs`)
 
 *   **Description:** A generic component for a clickable trigger that toggles the visibility of arbitrary dropdown content. It will handle common styling, focus management, and keyboard navigation actions. This has replaced the duplicated "Start Theme Selector" and "End Theme Selector" blocks.
-*   **Implementation Details:** A public function (`render_dropdown`) that takes parameters such as static IDs, `is_open`, `focus_handle`, and various `on_...` callback closures for toggling and selection.
+*   **Implementation Details:** A public function (`render_dropdown`) that takes parameters such as static IDs, `is_open`, `focus_handle`, a slice of `disabled_indices`, and various `on_...` callback closures for toggling and selection.
 *   **Priority:** Complete.
 
 ### 3. Scrollbar (`scrollbar.rs`)

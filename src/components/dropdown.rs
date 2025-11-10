@@ -4,7 +4,8 @@ use crate::{
     theme::{InterpolatableTheme, Theme},
 };
 use gpui::{
-    ClickEvent, Context, FocusHandle, IntoElement, ScrollHandle, Window, div, prelude::*, rems,
+    ClickEvent, Context, FocusHandle, IntoElement, ScrollHandle, Window, div, hsla, prelude::*,
+    rems,
 };
 
 pub fn render_dropdown(
@@ -17,16 +18,22 @@ pub fn render_dropdown(
     scroll_handle: &ScrollHandle,
     themes: &[Theme],
     selected_index: usize,
+    preview_index: usize,
+    disabled_indices: &[usize],
     theme: &InterpolatableTheme,
     on_toggle: impl Fn(&mut AppView, &ClickEvent, &mut Window, &mut Context<AppView>) + 'static,
     on_select: impl Fn(usize, &mut AppView, &ClickEvent, &mut Window, &mut Context<AppView>)
-    + 'static
-    + Clone,
+        + 'static
+        + Clone,
     cx: &mut Context<AppView>,
 ) -> impl IntoElement {
     let selected_theme_name = themes[selected_index].name.clone();
 
     let text_color = theme.0.get("text").map_or(gpui::black(), |c| c.hsla);
+    let text_disabled_color = theme
+        .0
+        .get("text.disabled")
+        .map_or(hsla(0.0, 0.0, 0.5, 1.0), |c| c.hsla);
     let border_color = theme.0.get("border").map_or(gpui::black(), |c| c.hsla);
     let focus_color = theme
         .0
@@ -89,14 +96,22 @@ pub fn render_dropdown(
                         .shadow_lg()
                         .children(themes.iter().enumerate().map(|(index, theme_item)| {
                             let on_select = on_select.clone();
+                            let is_disabled = disabled_indices.contains(&index);
+
                             div()
                                 .id((item_id_prefix, index))
                                 .p_2()
-                                .hover(|style| style.bg(element_hover))
-                                .when(index == selected_index, |style| style.bg(element_selected))
-                                .on_click(cx.listener(move |view, ev, win, cx| {
-                                    on_select(index, view, ev, win, cx);
-                                }))
+                                .when(!is_disabled, |s| {
+                                    s.hover(|style| style.bg(element_hover)).on_click(
+                                        cx.listener(move |view, ev, win, cx| {
+                                            on_select(index, view, ev, win, cx);
+                                        }),
+                                    )
+                                })
+                                .when(index == preview_index, |style| {
+                                    style.bg(element_selected)
+                                })
+                                .when(is_disabled, |s| s.text_color(text_disabled_color))
                                 .child(theme_item.name.clone())
                         })),
                 )

@@ -74,6 +74,8 @@ pub struct AppState {
     pub themes: Vec<Theme>,
     pub start_theme_index: usize,
     pub end_theme_index: usize,
+    pub start_preview_index: usize,
+    pub end_preview_index: usize,
     pub sleep_duration_input: Entity<TextInput>,
     pub fade_duration_input: Entity<TextInput>,
     pub theme_selector_focus_handle: FocusHandle,
@@ -112,6 +114,7 @@ impl AppView {
         cx.update_global::<AppState, _>(|app_state, _| {
             app_state.start_dropdown_open = !app_state.start_dropdown_open;
             if app_state.start_dropdown_open {
+                app_state.start_preview_index = app_state.start_theme_index;
                 app_state.end_dropdown_open = false;
             }
         });
@@ -121,94 +124,162 @@ impl AppView {
         cx.update_global::<AppState, _>(|app_state, _| {
             app_state.end_dropdown_open = !app_state.end_dropdown_open;
             if app_state.end_dropdown_open {
+                app_state.end_preview_index = app_state.end_theme_index;
                 app_state.start_dropdown_open = false;
             }
         });
     }
 
+    pub fn close_dropdowns(&mut self, cx: &mut Context<Self>) {
+        cx.update_global::<AppState, _>(|app_state, _| {
+            app_state.start_dropdown_open = false;
+            app_state.end_dropdown_open = false;
+        });
+        cx.notify();
+    }
+
     pub fn select_start_theme(&mut self, index: usize, cx: &mut Context<Self>) {
         cx.update_global::<AppState, _>(|app_state, _| {
-            app_state.start_theme_index = index;
-            app_state.start_dropdown_open = false; // Close dropdown on selection
-
-            // Instantly update the active theme
-            let theme = &app_state.themes[index].interpolatable_theme;
-            app_state.active_theme = theme.clone();
+            if index != app_state.end_theme_index {
+                app_state.start_theme_index = index;
+                // Instantly update the active theme
+                let theme = &app_state.themes[index].interpolatable_theme;
+                app_state.active_theme = theme.clone();
+            }
+            // Always close dropdown on selection attempt
+            app_state.start_dropdown_open = false;
         });
     }
 
     pub fn select_end_theme(&mut self, index: usize, cx: &mut Context<Self>) {
         cx.update_global::<AppState, _>(|app_state, _| {
-            app_state.end_theme_index = index;
-            app_state.end_dropdown_open = false; // Close dropdown on selection
+            if index != app_state.start_theme_index {
+                app_state.end_theme_index = index;
+            }
+            // Always close dropdown on selection attempt
+            app_state.end_dropdown_open = false;
         });
     }
 
-    pub fn select_next_theme(&mut self, cx: &mut Context<Self>) {
+    pub fn select_next_theme(&mut self, window: &Window, cx: &mut Context<Self>) {
         cx.update_global::<AppState, _>(|app_state, _| {
             let theme_count = app_state.themes.len();
-            if theme_count == 0 {
+            if theme_count < 2 {
                 return;
             }
 
             if app_state.start_dropdown_open {
-                app_state.start_theme_index =
-                    (app_state.start_theme_index + 1) % theme_count;
+                let disabled_index = app_state.end_theme_index;
+                let mut current_index = app_state.start_preview_index;
+                while current_index < theme_count - 1 {
+                    current_index += 1;
+                    if current_index != disabled_index {
+                        app_state.start_preview_index = current_index;
+                        return; // Found it, update and exit
+                    }
+                }
             } else if app_state.end_dropdown_open {
-                app_state.end_theme_index = (app_state.end_theme_index + 1) % theme_count;
+                let disabled_index = app_state.start_theme_index;
+                let mut current_index = app_state.end_preview_index;
+                while current_index < theme_count - 1 {
+                    current_index += 1;
+                    if current_index != disabled_index {
+                        app_state.end_preview_index = current_index;
+                        return; // Found it, update and exit
+                    }
+                }
             }
         });
+
+        // If dropdowns were closed, check focus and open the correct one.
+        let app_state = cx.global::<AppState>();
+        if !app_state.start_dropdown_open && !app_state.end_dropdown_open {
+            if app_state.theme_selector_focus_handle.is_focused(window) {
+                self.toggle_start_dropdown(cx);
+            } else if app_state.end_theme_selector_focus_handle.is_focused(window) {
+                self.toggle_end_dropdown(cx);
+            }
+        }
+
         cx.notify();
     }
 
-    pub fn select_prev_theme(&mut self, cx: &mut Context<Self>) {
+    pub fn select_prev_theme(&mut self, window: &Window, cx: &mut Context<Self>) {
         cx.update_global::<AppState, _>(|app_state, _| {
-            let theme_count = app_state.themes.len();
-            if theme_count == 0 {
+            if app_state.themes.len() < 2 {
                 return;
             }
 
             if app_state.start_dropdown_open {
-                app_state.start_theme_index =
-                    (app_state.start_theme_index + theme_count - 1) % theme_count;
+                let disabled_index = app_state.end_theme_index;
+                let mut current_index = app_state.start_preview_index;
+                while current_index > 0 {
+                    current_index -= 1;
+                    if current_index != disabled_index {
+                        app_state.start_preview_index = current_index;
+                        return; // Found it, update and exit
+                    }
+                }
             } else if app_state.end_dropdown_open {
-                app_state.end_theme_index =
-                    (app_state.end_theme_index + theme_count - 1) % theme_count;
+                let disabled_index = app_state.start_theme_index;
+                let mut current_index = app_state.end_preview_index;
+                while current_index > 0 {
+                    current_index -= 1;
+                    if current_index != disabled_index {
+                        app_state.end_preview_index = current_index;
+                        return; // Found it, update and exit
+                    }
+                }
             }
         });
+
+        // If dropdowns were closed, check focus and open the correct one.
+        let app_state = cx.global::<AppState>();
+        if !app_state.start_dropdown_open && !app_state.end_dropdown_open {
+            if app_state.theme_selector_focus_handle.is_focused(window) {
+                self.toggle_start_dropdown(cx);
+            } else if app_state.end_theme_selector_focus_handle.is_focused(window) {
+                self.toggle_end_dropdown(cx);
+            }
+        }
+
         cx.notify();
     }
 
     fn on_select_next_theme(
         &mut self,
         _: &SelectNextTheme,
-        _: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.select_next_theme(cx);
+        self.select_next_theme(window, cx);
     }
 
     fn on_select_prev_theme(
         &mut self,
         _: &SelectPrevTheme,
-        _: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        self.select_prev_theme(cx);
+        self.select_prev_theme(window, cx);
     }
 
-    pub fn confirm_theme(&mut self, cx: &mut Context<Self>) {
+    pub fn confirm_theme(&mut self, window: &Window, cx: &mut Context<Self>) {
         let app_state = cx.global::<AppState>();
         if app_state.start_dropdown_open {
-            self.select_start_theme(app_state.start_theme_index, cx);
+            self.select_start_theme(app_state.start_preview_index, cx);
         } else if app_state.end_dropdown_open {
-            self.select_end_theme(app_state.end_theme_index, cx);
+            self.select_end_theme(app_state.end_preview_index, cx);
+        } else if app_state.theme_selector_focus_handle.is_focused(window) {
+            self.toggle_start_dropdown(cx);
+        } else if app_state.end_theme_selector_focus_handle.is_focused(window) {
+            self.toggle_end_dropdown(cx);
         }
-        cx.notify();
     }
 
-    fn on_confirm_theme(&mut self, _: &ConfirmTheme, _: &mut Window, cx: &mut Context<Self>) {
-        self.confirm_theme(cx);
+    fn on_confirm_theme(&mut self, _: &ConfirmTheme, window: &mut Window, cx: &mut Context<Self>) {
+        self.confirm_theme(window, cx);
+        cx.notify();
     }
 
     fn run_simulation(&mut self, cx: &mut Context<Self>) {
@@ -248,6 +319,21 @@ impl AppView {
         if let (Ok(sleep), Ok(fade)) = (sleep_seconds, fade_seconds) {
             let sleep_duration = ChronoDuration::seconds(sleep as i64);
             let fade_duration = ChronoDuration::seconds(fade as i64);
+
+            // Get theme names for logging
+            let (start_theme_name, end_theme_name) = cx.read_global(
+                |app_state: &AppState, _| {
+                    (
+                        app_state.themes[app_state.start_theme_index].name.clone(),
+                        app_state.themes[app_state.end_theme_index].name.clone(),
+                    )
+                },
+            );
+
+            info!(
+                "Running simulation: Start='{}', End='{}'",
+                start_theme_name, end_theme_name
+            );
 
             cx.spawn(move |_, async_cx: &mut AsyncApp| {
                 let async_cx = async_cx.clone();
@@ -292,8 +378,24 @@ impl AppView {
 }
 
 impl Render for AppView {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let app_state = cx.global::<AppState>().clone();
+
+        // Logic to close dropdowns if they lose focus
+        if app_state.start_dropdown_open
+            && !app_state
+                .theme_selector_focus_handle
+                .contains_focused(window, cx)
+        {
+            self.close_dropdowns(cx);
+        }
+        if app_state.end_dropdown_open
+            && !app_state
+                .end_theme_selector_focus_handle
+                .contains_focused(window, cx)
+        {
+            self.close_dropdowns(cx);
+        }
 
         match app_state.app_mode {
             AppMode::Scheduler => div()
@@ -426,11 +528,15 @@ fn main() {
         let end_theme_scroll_handle = ScrollHandle::new();
         let run_simulation_focus_handle = cx.focus_handle().tab_index(5).tab_stop(true);
 
+        let end_theme_index = if all_themes.len() > 1 { 1 } else { 0 };
+
         cx.set_global(AppState {
             app_mode,
             themes: all_themes,
             start_theme_index: 0, // Default to the first theme
-            end_theme_index: 0,   // Default to the first theme
+            end_theme_index,      // Default to the second theme if available
+            start_preview_index: 0,
+            end_preview_index: end_theme_index,
             sleep_duration_input,
             fade_duration_input,
             theme_selector_focus_handle,
