@@ -1,8 +1,8 @@
 use chrono::{Duration as ChronoDuration, Local};
 use futures::{StreamExt, channel::mpsc};
 use gpui::{
-    Action, App, AppContext, Application, AsyncApp, Context, Entity, FocusHandle, Global,
-    IntoElement, KeyBinding, Render, ScrollHandle, SharedString, Window, div, prelude::*,
+    point, px, Action, App, AppContext, Application, AsyncApp, Context, Entity, FocusHandle,
+    Global, IntoElement, KeyBinding, Render, ScrollHandle, SharedString, Window, div, prelude::*,
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
@@ -191,13 +191,57 @@ impl AppView {
             }
         });
 
-        // If dropdowns were closed, check focus and open the correct one.
         let app_state = cx.global::<AppState>();
+
+        // If dropdowns were closed, check focus and open the correct one.
         if !app_state.start_dropdown_open && !app_state.end_dropdown_open {
             if app_state.theme_selector_focus_handle.is_focused(window) {
                 self.toggle_start_dropdown(cx);
             } else if app_state.end_theme_selector_focus_handle.is_focused(window) {
                 self.toggle_end_dropdown(cx);
+            }
+        } else {
+            // --- Manual Scroll Calculation ---
+            let rem_size = window.rem_size();
+            // An item has p-2, which is 0.5rem top and 0.5rem bottom padding.
+            let item_height = window.line_height() + rem_size;
+
+            if app_state.start_dropdown_open {
+                let scroll_handle = &app_state.start_theme_scroll_handle;
+                let container_bounds = scroll_handle.bounds();
+                if container_bounds.size.height > px(0.0) {
+                    let current_offset = scroll_handle.offset().y;
+                    let item_top = item_height * app_state.start_preview_index as f32;
+                    let item_bottom = item_top + item_height;
+                    let visible_top = -current_offset;
+                    let visible_bottom = visible_top + container_bounds.size.height;
+
+                    let mut new_offset_y = current_offset;
+                    if item_top < visible_top {
+                        new_offset_y = -item_top;
+                    } else if item_bottom > visible_bottom {
+                        new_offset_y = -(item_bottom - container_bounds.size.height);
+                    }
+                    scroll_handle.set_offset(point(px(0.0), new_offset_y));
+                }
+            } else if app_state.end_dropdown_open {
+                let scroll_handle = &app_state.end_theme_scroll_handle;
+                let container_bounds = scroll_handle.bounds();
+                if container_bounds.size.height > px(0.0) {
+                    let current_offset = scroll_handle.offset().y;
+                    let item_top = item_height * app_state.end_preview_index as f32;
+                    let item_bottom = item_top + item_height;
+                    let visible_top = -current_offset;
+                    let visible_bottom = visible_top + container_bounds.size.height;
+
+                    let mut new_offset_y = current_offset;
+                    if item_top < visible_top {
+                        new_offset_y = -item_top;
+                    } else if item_bottom > visible_bottom {
+                        new_offset_y = -(item_bottom - container_bounds.size.height);
+                    }
+                    scroll_handle.set_offset(point(px(0.0), new_offset_y));
+                }
             }
         }
 
@@ -233,13 +277,57 @@ impl AppView {
             }
         });
 
-        // If dropdowns were closed, check focus and open the correct one.
         let app_state = cx.global::<AppState>();
+
+        // If dropdowns were closed, check focus and open the correct one.
         if !app_state.start_dropdown_open && !app_state.end_dropdown_open {
             if app_state.theme_selector_focus_handle.is_focused(window) {
                 self.toggle_start_dropdown(cx);
             } else if app_state.end_theme_selector_focus_handle.is_focused(window) {
                 self.toggle_end_dropdown(cx);
+            }
+        } else {
+            // --- Manual Scroll Calculation ---
+            let rem_size = window.rem_size();
+            // An item has p-2, which is 0.5rem top and 0.5rem bottom padding.
+            let item_height = window.line_height() + rem_size;
+
+            if app_state.start_dropdown_open {
+                let scroll_handle = &app_state.start_theme_scroll_handle;
+                let container_bounds = scroll_handle.bounds();
+                if container_bounds.size.height > px(0.0) {
+                    let current_offset = scroll_handle.offset().y;
+                    let item_top = item_height * app_state.start_preview_index as f32;
+                    let item_bottom = item_top + item_height;
+                    let visible_top = -current_offset;
+                    let visible_bottom = visible_top + container_bounds.size.height;
+
+                    let mut new_offset_y = current_offset;
+                    if item_top < visible_top {
+                        new_offset_y = -item_top;
+                    } else if item_bottom > visible_bottom {
+                        new_offset_y = -(item_bottom - container_bounds.size.height);
+                    }
+                    scroll_handle.set_offset(point(px(0.0), new_offset_y));
+                }
+            } else if app_state.end_dropdown_open {
+                let scroll_handle = &app_state.end_theme_scroll_handle;
+                let container_bounds = scroll_handle.bounds();
+                if container_bounds.size.height > px(0.0) {
+                    let current_offset = scroll_handle.offset().y;
+                    let item_top = item_height * app_state.end_preview_index as f32;
+                    let item_bottom = item_top + item_height;
+                    let visible_top = -current_offset;
+                    let visible_bottom = visible_top + container_bounds.size.height;
+
+                    let mut new_offset_y = current_offset;
+                    if item_top < visible_top {
+                        new_offset_y = -item_top;
+                    } else if item_bottom > visible_bottom {
+                        new_offset_y = -(item_bottom - container_bounds.size.height);
+                    }
+                    scroll_handle.set_offset(point(px(0.0), new_offset_y));
+                }
             }
         }
 
