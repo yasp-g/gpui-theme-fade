@@ -4,7 +4,7 @@
 Current Goal: Extract and integrate reusable UI components, starting with a generic Dropdown, to improve modularity and address UI layering.
 *(Previously: Implement a custom dropdown component to fix UI layering and clipping issues - now being addressed through componentization)*
 
-**Next Goal:** Finalize UI interactivity by implementing Escape key handling and cleaning up any remaining warnings.
+**Next Goal:** Finalize UI interactivity by implementing Escape key handling (DONE) and cleaning up any remaining warnings (DONE).
 
 ---
 
