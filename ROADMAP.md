@@ -102,6 +102,12 @@ This approach allows us to use the real scheduler code in a controlled test envi
   - **Problem:** The `ToggleDropdown` and `SelectTheme` actions were being handled by global `cx.on_action` listeners defined in the `main` function. This is the same pattern that previously caused issues with keyboard navigation, where the action handler receives a context that is disconnected from the application window.
   - **Solution:** The handlers for these actions were refactored into methods on the `AppView` struct (`on_toggle_dropdown`, `on_select_theme`). The UI now attaches these methods using `cx.listener`, ensuring all UI-related actions are handled within a valid window context. The old global handlers were removed.
 
+### Implementation Notes & Refinements (2025-11-10)
+
+- **Color Palette Preview:** The "Color Palette" section of the UI will be implemented as a set of gradient bars.
+  - **Goal:** To provide a static, at-a-glance preview of the color transition for key theme colors (e.g., `surface.background`, `text`, etc.).
+  - **Implementation:** A new `gradient_bar` component will be created using a `canvas` element to manually draw a smooth `linear-gradient` between the start and end theme colors.
+
 ### Implementation Notes & Refinements (2025-11-02)
 
 Significant progress has been made, and we are down to a single compilation error.

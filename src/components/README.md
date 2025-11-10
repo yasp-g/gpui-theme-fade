@@ -25,11 +25,11 @@ The following components have been identified for extraction from `src/ui.rs`. T
 *   **Implementation Details:** A public function (`render_dropdown`) that takes parameters such as static IDs, `is_open`, `focus_handle`, a slice of `disabled_indices`, and various `on_...` callback closures for toggling and selection. It now includes auto-scrolling for keyboard navigation to keep the highlighted item in view, and "Escape" key handling to close the dropdown.
 *   **Priority:** Complete.
 
-### 3. Scrollbar (`scrollbar.rs`)
+### 3. Gradient Bar (`gradient_bar.rs`)
 
-*   **Description:** A manual scrollbar implementation (thumb and track) that can be rendered alongside a scrollable `div`. This is necessary because the base GPUI `div` does not automatically render a visible scrollbar.
-*   **Implementation Details:** A public function (`render_scrollbar`) that returns a custom `ScrollbarElement` implementing the `gpui::Element` trait. It calculates the thumb's size and position based on a `ScrollHandle` and handles drag events to update the scroll offset. The initial version has a hardcoded color and does not yet support theme integration.
-*   **Priority:** Complete (drag functionality implemented).
+*   **Description:** A custom-drawn component that renders a smooth horizontal gradient between a start and end color. This will be used to preview theme transitions for key colors.
+*   **Implementation Details:** Will be a public function (`render_gradient_bar`) that returns a `canvas` element. The canvas's `paint` closure will manually draw the gradient by interpolating between the colors and drawing 1-pixel-wide vertical lines.
+*   **Priority:** High (this is the next feature to be implemented).
 
 ### 4. Form Field (`form_field.rs`)
 
@@ -51,4 +51,4 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ## Next Steps
 
-The drag-to-scroll functionality for the `Scrollbar` component is complete. The next step is to integrate colors from the active theme.
+The next step is to create and implement the `gradient_bar` component to visualize theme transitions in the "Color Palette" area of the UI.
