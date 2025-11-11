@@ -79,6 +79,7 @@ pub fn render_dropdown(
         .child(render_popover(
             is_open,
             div()
+                .occlude() // Add .occlude() here
                 .absolute()
                 .top(rems(2.5))
                 .right_0()
