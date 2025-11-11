@@ -473,6 +473,7 @@ impl AppView {
                                 });
                             })
                             .ok();
+                        let _ = async_cx.refresh();
                     }
                     info!("Simulation finished and channel closed.");
                 }

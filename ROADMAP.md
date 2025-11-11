@@ -1,9 +1,15 @@
 # Project Roadmap
 
 **Last Updated:** 2025-11-11
-**Current Goal:** Implement the `header` component as outlined in the component roadmap.
+**Current Goal:** Fix the theme animation bug by triggering UI redraws from the background thread.
 
 ---
+
+### Top Priority: Theme Animation Bug (2025-11-11)
+
+- **Problem:** The theme transition animation does not render smoothly. The UI only updates when the user interacts with it (e.g., moving the mouse, typing), which manually triggers a redraw.
+- **Cause:** The `ThemeScheduler` runs in a background thread and updates the `active_theme` in the global `AppState`. However, simply updating the state in a background thread does not notify the main UI thread that it needs to redraw the window. The UI thread remains idle until a user input event forces it to re-render.
+- **Solution:** The background thread must explicitly signal the main thread to refresh the UI. This will be fixed by calling `cx.refresh()` on the `AppContext` within the `ThemeScheduler::run_loop` immediately after the `active_theme` is updated with the new interpolated theme. This will ensure the UI redraws on every step of the animation, creating a smooth transition.
 
 ### Implementation Notes & Refinements (2025-11-11) - *Decision Update & Course Correction*
 
