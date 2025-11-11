@@ -21,7 +21,7 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ### 2. Dropdown (`dropdown.rs`)
 
-*   **Description:** A generic component for a clickable trigger that toggles the visibility of arbitrary dropdown content. It will handle common styling, focus management, and keyboard navigation actions. This has replaced the duplicated "Start Theme Selector" and "End Theme Selector" blocks. **Note:** The event-capturing bug will be fixed by applying the `.occlude()` method to the popover's root `div`.
+*   **Description:** A generic component for a clickable trigger that toggles the visibility of arbitrary dropdown content. It will handle common styling, focus management, and keyboard navigation actions. This has replaced the duplicated "Start Theme Selector" and "End Theme Selector" blocks. **Note:** The event-capturing bug has been fixed by applying the `.occlude()` method to the popover's root `div`.
 *   **Implementation Details:** A public function (`render_dropdown`) that takes parameters such as static IDs, `is_open`, `focus_handle`, a slice of `disabled_indices`, and various `on_...` callback closures for toggling and selection. It now includes auto-scrolling for keyboard navigation to keep the highlighted item in view, and "Escape" key handling to close the dropdown.
 *   **Priority:** Complete.
 
@@ -51,4 +51,4 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ## Next Steps
 
-The immediate next step is to fix the critical bug where mouse clicks "pass through" the dropdown menu. This will be done by adding the `.occlude()` method to the root `div` of the `popover` component. The `gradient_bar` implementation will be postponed until this is complete.
+The immediate next step is to implement the `gradient_bar` component.
