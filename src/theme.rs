@@ -120,17 +120,19 @@ pub fn flatten_colors(
         };
 
         if let Some(hex_string) = value.as_str() {
-            match Color::from_str(hex_string) {
-                Ok(color) => {
-                    interpolatable_theme.0.insert(new_key, color);
-                }
-                Err(e) => {
-                    tracing::warn!(
-                        "Failed to parse color for key '{}': {} (value: '{}')",
-                        new_key,
-                        e,
-                        hex_string
-                    );
+            if hex_string.starts_with('#') {
+                match Color::from_str(hex_string) {
+                    Ok(color) => {
+                        interpolatable_theme.0.insert(new_key, color);
+                    }
+                    Err(e) => {
+                        tracing::warn!(
+                            "Failed to parse color for key '{}': {} (value: '{}')",
+                            new_key,
+                            e,
+                            hex_string
+                        );
+                    }
                 }
             }
         } else if let Some(nested_obj) = value.as_object() {

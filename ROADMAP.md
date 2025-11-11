@@ -1,15 +1,19 @@
 # Project Roadmap
 
 **Last Updated:** 2025-11-11
-**Current Goal:** Fix the theme animation bug by triggering UI redraws from the background thread.
+**Current Goal:** Awaiting next task.
 
 ---
 
-### Top Priority: Theme Animation Bug (2025-11-11)
+### Implementation Notes & Refinements (2025-11-11)
 
-- **Problem:** The theme transition animation does not render smoothly. The UI only updates when the user interacts with it (e.g., moving the mouse, typing), which manually triggers a redraw.
-- **Cause:** The `ThemeScheduler` runs in a background thread and updates the `active_theme` in the global `AppState`. However, simply updating the state in a background thread does not notify the main UI thread that it needs to redraw the window. The UI thread remains idle until a user input event forces it to re-render.
-- **Solution:** The background thread must explicitly signal the main thread to refresh the UI. This will be fixed by calling `cx.refresh()` on the `AppContext` within the `ThemeScheduler::run_loop` immediately after the `active_theme` is updated with the new interpolated theme. This will ensure the UI redraws on every step of the animation, creating a smooth transition.
+- **Robust Theme Parsing:** Fixed a bug that caused a flood of warnings on startup.
+  - **Problem:** The theme parser was attempting to interpret any string value in the theme files (e.g., `"italic"`, `"opaque"`) as a hex color, leading to numerous "Invalid hex color" warnings.
+  - **Solution:** The `flatten_colors` function in `src/theme.rs` was updated to be more selective. It now checks if a string value starts with a `#` before attempting to parse it as a color, correctly ignoring non-color style properties.
+
+- **Theme Animation Bug Fix:** Resolved a major bug where the theme transition animation would not render smoothly.
+  - **Problem:** The UI would only update during the theme fade when the user interacted with it (e.g., moving the mouse), as the background thread was not signaling the UI thread to redraw.
+  - **Solution:** A call to `cx.refresh()` was added to the simulation task in `src/main.rs`. This call is made immediately after the global `active_theme` is updated, forcing a UI redraw for each step of the animation and resulting in a smooth transition.
 
 ### Implementation Notes & Refinements (2025-11-11) - *Decision Update & Course Correction*
 
