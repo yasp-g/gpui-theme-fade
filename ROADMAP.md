@@ -1,20 +1,28 @@
 # Project Roadmap
 
-**Last Updated:** 2025-11-10
-**Current Goal:** Fix dropdown layering bug by refactoring the `popover` component to use GPUI's modal system, ensuring it correctly captures mouse events.
+**Last Updated:** 2025-11-11
+**Current Goal:** Fix dropdown layering bug by applying the `.occlude()` method to the popover component, ensuring it correctly captures mouse events.
 
 ---
 
-### Implementation Notes & Refinements (2025-11-10) - *Decision Update*
+### Implementation Notes & Refinements (2025-11-11) - *Decision Update & Course Correction*
 
-- **New Approach for Dropdowns (Overlay System):** After confirming a z-index/layering bug where clicks "pass through" the dropdown menu, a new implementation plan has been created. The current `popover` component, while visually correct, is not a true overlay and does not properly capture mouse events.
-  - **Problem:** The dropdown menu visually appears on top of other elements, but does not intercept mouse clicks, which instead interact with the UI elements underneath it.
-  - **Discovery:** The correct way to implement this in GPUI is to use the `window.present_modal()` API. This renders a view into a separate, top-level overlay layer that is guaranteed to capture all mouse events within its bounds.
-  - **Plan:**
-    1.  **Create a `DropdownMenu` View:** The content of the popover (the list of items) will be extracted into its own stateful view struct.
-    2.  **Implement `ManagedView`:** The new `DropdownMenu` view will implement the `ManagedView` trait, which is required for it to be presented as a modal.
-    3.  **Refactor `dropdown` Component:** The `on_toggle` logic will be changed to instantiate and present the `DropdownMenu` view using `window.present_modal()`.
-    4.  **Handle Dismissal:** Logic will be added to call `window.dismiss_modal()` when an item is selected or the popover is otherwise cancelled.
+- **New, Simplified Approach for Dropdowns (`.occlude()`):** After a deep investigation of the GPUI source code, the previous plan to use a modal system has been found to be **incorrect**. The `window.present_modal()` API does not exist, and the `ManagedView` trait is not used in the way previously assumed. A much simpler and more idiomatic solution has been discovered.
+  - **Problem:** The dropdown menu visually appears on top of other elements but does not intercept mouse clicks.
+  - **Discovery:** The correct way to implement this behavior in GPUI is to use the `.occlude()` method on the `div` element that serves as the dropdown's container. This method sets the underlying `HitboxBehavior` to `BlockMouse`, which explicitly prevents mouse events from "passing through" to elements rendered underneath it. This is the intended mechanism for overlays and popovers.
+  - **New Plan:**
+    1.  In `src/components/popover.rs`, locate the root `div` that renders the popover content.
+    2.  Add the `.occlude()` method to this `div`'s style chain.
+    3.  This single change is expected to resolve the layering bug without any complex refactoring.
+
+- **(DEPRECATED) Old Approach for Dropdowns (Overlay System):**
+  - **Reason for Deprecation:** The plan below was based on a misunderstanding of the GPUI API. It is preserved here for historical context.
+  - ~~**Discovery:** The correct way to implement this in GPUI is to use the `window.present_modal()` API. This renders a view into a separate, top-level overlay layer that is guaranteed to capture all mouse events within its bounds.~~
+  - ~~**Plan:**~~
+    1.  ~~**Create a `DropdownMenu` View:** The content of the popover (the list of items) will be extracted into its own stateful view struct.~~
+    2.  ~~**Implement `ManagedView`:** The new `DropdownMenu` view will implement the `ManagedView` trait, which is required for it to be presented as a modal.~~
+    3.  ~~**Refactor `dropdown` Component:** The `on_toggle` logic will be changed to instantiate and present the `DropdownMenu` view using `window.present_modal()`.~~
+    4.  ~~**Handle Dismissal:** Logic will be added to call `window.dismiss_modal()` when an item is selected or the popover is otherwise cancelled.~~
 
 ### Implementation Notes & Refinements (2025-11-07) - *Decision Update*
 
