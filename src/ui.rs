@@ -1,8 +1,9 @@
 use crate::components::button::render_button;
 use crate::components::dropdown::render_dropdown;
-use crate::components::gradient_bar::render_gradient_bar; // Import gradient_bar
+use crate::components::form_field::render_form_field;
+use crate::components::gradient_bar::render_gradient_bar;
 use crate::AppView;
-use gpui::{Context, IntoElement, div, hsla, prelude::*, rems};
+use gpui::{Context, IntoElement, div, hsla, prelude::*};
 
 pub fn render_interactive_ui(
     _view: &mut crate::AppView,
@@ -62,100 +63,58 @@ pub fn render_interactive_ui(
                         .border_1()
                         .border_color(hsla(0., 0., 1., 0.2))
                         .rounded_md()
-                        .child(
-                            // Start Theme Selector
-                            div()
-                                .flex()
-                                .w_full()
-                                .justify_between()
-                                .items_center()
-                                .child(div().child("Start Theme:"))
-                                .child(
-                                    div().w(rems(12.0)).child(render_dropdown(
-                                        "start-theme-selector",
-                                        "start-theme-button",
-                                        "start-theme",
-                                        "start-theme-scroll",
-                                        app_state.start_dropdown_open,
-                                        &app_state.theme_selector_focus_handle,
-                                        &app_state.start_theme_scroll_handle,
-                                        &app_state.themes,
-                                        app_state.start_theme_index,
-                                        app_state.start_preview_index,
-                                        &[app_state.end_theme_index],
-                                        active_theme,
-                                        |view, _, _, cx| view.toggle_start_dropdown(cx),
-                                        |index, view, _, _, cx| view.select_start_theme(index, cx),
-                                        cx,
-                                    )),
-                                ),
-                        )
-                        .child(
-                            // End Theme Selector
-                            div()
-                                .flex()
-                                .w_full()
-                                .justify_between()
-                                .items_center()
-                                .child(div().child("End Theme:"))
-                                .child(
-                                    div().w(rems(12.0)).child(render_dropdown(
-                                        "end-theme-selector",
-                                        "end-theme-button",
-                                        "end-theme",
-                                        "end-theme-scroll",
-                                        app_state.end_dropdown_open,
-                                        &app_state.end_theme_selector_focus_handle,
-                                        &app_state.end_theme_scroll_handle,
-                                        &app_state.themes,
-                                        app_state.end_theme_index,
-                                        app_state.end_preview_index,
-                                        &[app_state.start_theme_index],
-                                        active_theme,
-                                        |view, _, _, cx| view.toggle_end_dropdown(cx),
-                                        |index, view, _, _, cx| view.select_end_theme(index, cx),
-                                        cx,
-                                    )),
-                                ),
-                        )
-                        .child(
-                            div()
-                                .flex()
-                                .w_full()
-                                .justify_between()
-                                .items_center()
-                                .child(div().child("Sleep Duration (s):"))
-                                .child(
-                                    div()
-                                        .w(rems(12.0))
-                                        .border_1()
-                                        .border_color(if app_state.sleep_input_is_valid {
-                                            hsla(0., 0., 1., 0.2)
-                                        } else {
-                                            gpui::red()
-                                        })
-                                        .child(app_state.sleep_duration_input.clone()),
-                                ),
-                        )
-                        .child(
-                            div()
-                                .flex()
-                                .w_full()
-                                .justify_between()
-                                .items_center()
-                                .child(div().child("Fade Duration (s):"))
-                                .child(
-                                    div()
-                                        .w(rems(12.0))
-                                        .border_1()
-                                        .border_color(if app_state.fade_input_is_valid {
-                                            hsla(0., 0., 1., 0.2)
-                                        } else {
-                                            gpui::red()
-                                        })
-                                        .child(app_state.fade_duration_input.clone()),
-                                ),
-                        )
+                        .child(render_form_field(
+                            "Start Theme:",
+                            None,
+                            render_dropdown(
+                                "start-theme-selector",
+                                "start-theme-button",
+                                "start-theme",
+                                "start-theme-scroll",
+                                app_state.start_dropdown_open,
+                                &app_state.theme_selector_focus_handle,
+                                &app_state.start_theme_scroll_handle,
+                                &app_state.themes,
+                                app_state.start_theme_index,
+                                app_state.start_preview_index,
+                                &[app_state.end_theme_index],
+                                active_theme,
+                                |view, _, _, cx| view.toggle_start_dropdown(cx),
+                                |index, view, _, _, cx| view.select_start_theme(index, cx),
+                                cx,
+                            ),
+                        ))
+                        .child(render_form_field(
+                            "End Theme:",
+                            None,
+                            render_dropdown(
+                                "end-theme-selector",
+                                "end-theme-button",
+                                "end-theme",
+                                "end-theme-scroll",
+                                app_state.end_dropdown_open,
+                                &app_state.end_theme_selector_focus_handle,
+                                &app_state.end_theme_scroll_handle,
+                                &app_state.themes,
+                                app_state.end_theme_index,
+                                app_state.end_preview_index,
+                                &[app_state.start_theme_index],
+                                active_theme,
+                                |view, _, _, cx| view.toggle_end_dropdown(cx),
+                                |index, view, _, _, cx| view.select_end_theme(index, cx),
+                                cx,
+                            ),
+                        ))
+                        .child(render_form_field(
+                            "Sleep Duration (s):",
+                            app_state.sleep_input_validation_message.clone(),
+                            app_state.sleep_duration_input.clone(),
+                        ))
+                        .child(render_form_field(
+                            "Fade Duration (s):",
+                            app_state.fade_input_validation_message.clone(),
+                            app_state.fade_duration_input.clone(),
+                        ))
                         .child(
                             render_button(
                                 "run-simulation-button",

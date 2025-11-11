@@ -1,7 +1,7 @@
 # Project Roadmap
 
 **Last Updated:** 2025-11-11
-**Current Goal:** Implement the `form_field` component as outlined in the component roadmap.
+**Current Goal:** Implement the `panel` component as outlined in the component roadmap.
 
 ---
 

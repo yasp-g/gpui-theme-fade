@@ -86,8 +86,8 @@ pub struct AppState {
     pub start_theme_scroll_handle: ScrollHandle,
     pub end_theme_scroll_handle: ScrollHandle,
     pub run_simulation_focus_handle: FocusHandle,
-    pub sleep_input_is_valid: bool,
-    pub fade_input_is_valid: bool,
+    pub sleep_input_validation_message: Option<SharedString>,
+    pub fade_input_validation_message: Option<SharedString>,
     pub start_dropdown_open: bool,
     pub end_dropdown_open: bool,
     // The currently active theme, which the UI renders.
@@ -401,17 +401,31 @@ impl AppView {
         let sleep_seconds = sleep_content.parse::<f32>();
         let fade_seconds = fade_content.parse::<f32>();
 
-        let sleep_is_valid = sleep_seconds.is_ok();
-        let fade_is_valid = fade_seconds.is_ok();
+        let sleep_validation_message = match sleep_seconds {
+            Ok(s) if (0.0..=600.0).contains(&s) => None,
+            _ => Some("Value must be between 0 and 600.".into()),
+        };
+        let fade_validation_message = match fade_seconds {
+            Ok(f) if (0.0..=600.0).contains(&f) => None,
+            _ => Some("Value must be between 0 and 600.".into()),
+        };
 
         // Update the validity flags in AppState.
         cx.update_global(|app_state: &mut AppState, _| {
-            app_state.sleep_input_is_valid = sleep_is_valid;
-            app_state.fade_input_is_valid = fade_is_valid;
+            app_state.sleep_input_validation_message = sleep_validation_message.clone();
+            app_state.fade_input_validation_message = fade_validation_message.clone();
         });
 
         // Only run the simulation if both inputs are valid.
-        if let (Ok(sleep), Ok(fade)) = (sleep_seconds, fade_seconds) {
+        if sleep_validation_message.is_none() && fade_validation_message.is_none() {
+            // Clear messages on successful run
+            cx.update_global(|app_state: &mut AppState, _| {
+                app_state.sleep_input_validation_message = None;
+                app_state.fade_input_validation_message = None;
+            });
+
+            let sleep = sleep_seconds.unwrap();
+            let fade = fade_seconds.unwrap();
             let sleep_duration = ChronoDuration::seconds(sleep as i64);
             let fade_duration = ChronoDuration::seconds(fade as i64);
 
@@ -640,8 +654,8 @@ fn main() {
             start_theme_scroll_handle,
             end_theme_scroll_handle,
             run_simulation_focus_handle,
-            sleep_input_is_valid: true,
-            fade_input_is_valid: true,
+            sleep_input_validation_message: None,
+            fade_input_validation_message: None,
             start_dropdown_open: false,
             end_dropdown_open: false,
             active_theme: initial_active_theme,

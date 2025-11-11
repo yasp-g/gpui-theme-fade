@@ -33,15 +33,15 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ### 4. Form Field (`form_field.rs`)
 
-*   **Description:** A generic wrapper component that provides consistent styling for a label paired with an input control (like a `TextInput` or `Dropdown`). It renders a border around its child that visually indicates a validation state (e.g., green for valid, red for invalid).
-*   **Implementation Details:** Will be a public function (`render_form_field`) that takes a `label`, an `is_valid` flag, and accepts any `impl IntoElement` as a child. This allows it to wrap any kind of control.
-*   **Priority:** High (this is the next feature to be implemented).
+*   **Description:** A generic wrapper component that provides consistent styling for a label paired with an input control (like a `TextInput` or `Dropdown`). It renders a border around its child that visually indicates a validation state and can display a validation message underneath.
+*   **Implementation Details:** A public function (`render_form_field`) that takes a `label`, an `Option<SharedString>` for a validation message, and accepts any `impl IntoElement` as a child.
+*   **Priority:** Complete.
 
 ### 5. Panel Container (`panel.rs`)
 
 *   **Description:** A reusable container component for grouping related UI elements, featuring consistent styling such as borders, padding, and rounded corners. This will replace the "Left Panel" and "Right Panel" containers.
 *   **Implementation Details:** Will likely be a public function (`render_panel`) that accepts an `id` and a collection of child elements (`impl IntoElement` or a closure returning children).
-*   **Priority:** Low (primarily for structural organization and consistent container styling).
+*   **Priority:** High (this is the next feature to be implemented).
 
 ### 6. Header (`header.rs`)
 
@@ -51,4 +51,4 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ## Next Steps
 
-The immediate next step is to implement the `form_field` component.
+The immediate next step is to implement the `panel` component.
