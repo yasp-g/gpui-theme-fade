@@ -28,14 +28,14 @@ The following components have been identified for extraction from `src/ui.rs`. T
 ### 3. Gradient Bar (`gradient_bar.rs`)
 
 *   **Description:** A custom-drawn component that renders a smooth horizontal gradient between a start and end color. This will be used to preview theme transitions for key colors.
-*   **Implementation Details:** Will be a public function (`render_gradient_bar`) that returns a `canvas` element. The canvas's `paint` closure will manually draw the gradient by interpolating between the colors and drawing 1-pixel-wide vertical lines.
-*   **Priority:** High (this is the next feature to be implemented).
+*   **Implementation Details:** A public function (`render_gradient_bar`) that returns a `div` with its background set to a `linear_gradient`.
+*   **Priority:** Complete.
 
 ### 4. Form Field (`form_field.rs`)
 
 *   **Description:** A generic wrapper component that provides consistent styling for a label paired with an input control (like a `TextInput` or `Dropdown`). It renders a border around its child that visually indicates a validation state (e.g., green for valid, red for invalid).
 *   **Implementation Details:** Will be a public function (`render_form_field`) that takes a `label`, an `is_valid` flag, and accepts any `impl IntoElement` as a child. This allows it to wrap any kind of control.
-*   **Priority:** Medium (promotes consistency and reusability for all input fields).
+*   **Priority:** High (this is the next feature to be implemented).
 
 ### 5. Panel Container (`panel.rs`)
 
@@ -51,4 +51,4 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ## Next Steps
 
-The immediate next step is to implement the `gradient_bar` component.
+The immediate next step is to implement the `form_field` component.

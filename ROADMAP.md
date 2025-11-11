@@ -1,7 +1,7 @@
 # Project Roadmap
 
 **Last Updated:** 2025-11-11
-**Current Goal:** Fix dropdown layering bug by applying the `.occlude()` method to the popover component, ensuring it correctly captures mouse events. **(COMPLETED)**
+**Current Goal:** Implement the `form_field` component as outlined in the component roadmap.
 
 ---
 

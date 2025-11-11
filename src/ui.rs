@@ -1,5 +1,6 @@
 use crate::components::button::render_button;
 use crate::components::dropdown::render_dropdown;
+use crate::components::gradient_bar::render_gradient_bar; // Import gradient_bar
 use crate::AppView;
 use gpui::{Context, IntoElement, div, hsla, prelude::*, rems};
 
@@ -11,6 +12,19 @@ pub fn render_interactive_ui(
     let active_theme = &app_state.active_theme;
     let surface_background = active_theme.0.get("surface.background").unwrap().hsla;
     let text_color = active_theme.0.get("text").unwrap().hsla;
+
+    let start_theme = &app_state.themes[app_state.start_theme_index];
+    let end_theme = &app_state.themes[app_state.end_theme_index];
+
+    let key_colors = [
+        "surface.background",
+        "text",
+        "element.background",
+        "element.hover",
+        "element.selected",
+        "border",
+        "border.focused",
+    ];
 
     div()
         .key_context("InteractiveUI")
@@ -40,9 +54,9 @@ pub fn render_interactive_ui(
                     // Left Panel
                     div()
                         .id("left-panel")
-                        .flex_1()
                         .flex()
                         .flex_col()
+                        .flex_1()
                         .gap_4()
                         .p_4()
                         .border_1()
@@ -159,13 +173,24 @@ pub fn render_interactive_ui(
                     div()
                         .id("right-panel")
                         .flex_1()
+                        .flex()
+                        .flex_col()
+                        .gap_2()
                         .p_4()
                         .border_1()
                         .border_color(hsla(0., 0., 1., 0.2))
                         .rounded_md()
-                        .child(
-                            div().child("Color Palette"), // Placeholder
-                        ),
+                        .child(div().child("Color Palette"))
+                        .children(key_colors.iter().map(|&key| {
+                            let start_hsla = start_theme.interpolatable_theme.0.get(key).map_or(gpui::black(), |c| c.hsla);
+                            let end_hsla = end_theme.interpolatable_theme.0.get(key).map_or(gpui::black(), |c| c.hsla);
+                            div()
+                                .flex()
+                                .flex_col()
+                                .gap_1()
+                                .child(div().text_sm().child(key))
+                                .child(render_gradient_bar(start_hsla, end_hsla))
+                        })),
                 ),
         )
 }
