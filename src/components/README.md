@@ -39,16 +39,16 @@ The following components have been identified for extraction from `src/ui.rs`. T
 
 ### 5. Panel Container (`panel.rs`)
 
-*   **Description:** A reusable container component for grouping related UI elements, featuring consistent styling such as borders, padding, and rounded corners. This will replace the "Left Panel" and "Right Panel" containers.
-*   **Implementation Details:** Will likely be a public function (`render_panel`) that accepts an `id` and a collection of child elements (`impl IntoElement` or a closure returning children).
-*   **Priority:** High (this is the next feature to be implemented).
+*   **Description:** A reusable container component for grouping related UI elements, featuring consistent styling such as borders, padding, and rounded corners. This has replaced the "Left Panel" and "Right Panel" containers.
+*   **Implementation Details:** A public function (`render_panel`) that accepts an `id`, a `gap` size, and an iterator of child elements.
+*   **Priority:** Complete.
 
 ### 6. Header (`header.rs`)
 
 *   **Description:** A simple component for displaying the main title of the application.
 *   **Implementation Details:** Will likely be a public function (`render_header`) taking the title string.
-*   **Priority:** Low (minimal code reduction, but good for semantic structure).
+*   **Priority:** High (this is the next feature to be implemented).
 
 ## Next Steps
 
-The immediate next step is to implement the `panel` component.
+The immediate next step is to implement the `header` component.

@@ -1,9 +1,10 @@
+use crate::AppView;
 use crate::components::button::render_button;
 use crate::components::dropdown::render_dropdown;
 use crate::components::form_field::render_form_field;
 use crate::components::gradient_bar::render_gradient_bar;
-use crate::AppView;
-use gpui::{Context, IntoElement, div, hsla, prelude::*};
+use crate::components::panel::render_panel;
+use gpui::{Context, IntoElement, div, prelude::*, rems};
 
 pub fn render_interactive_ui(
     _view: &mut crate::AppView,
@@ -51,19 +52,11 @@ pub fn render_interactive_ui(
                 .flex_1()
                 .flex()
                 .gap_4()
-                .child(
-                    // Left Panel
-                    div()
-                        .id("left-panel")
-                        .flex()
-                        .flex_col()
-                        .flex_1()
-                        .gap_4()
-                        .p_4()
-                        .border_1()
-                        .border_color(hsla(0., 0., 1., 0.2))
-                        .rounded_md()
-                        .child(render_form_field(
+                .child(render_panel(
+                    "left-panel",
+                    rems(1.0).into(), // gap_4
+                    vec![
+                        render_form_field(
                             "Start Theme:",
                             None,
                             render_dropdown(
@@ -83,8 +76,9 @@ pub fn render_interactive_ui(
                                 |index, view, _, _, cx| view.select_start_theme(index, cx),
                                 cx,
                             ),
-                        ))
-                        .child(render_form_field(
+                        )
+                        .into_any_element(),
+                        render_form_field(
                             "End Theme:",
                             None,
                             render_dropdown(
@@ -104,52 +98,57 @@ pub fn render_interactive_ui(
                                 |index, view, _, _, cx| view.select_end_theme(index, cx),
                                 cx,
                             ),
-                        ))
-                        .child(render_form_field(
+                        )
+                        .into_any_element(),
+                        render_form_field(
                             "Sleep Duration (s):",
                             app_state.sleep_input_validation_message.clone(),
                             app_state.sleep_duration_input.clone(),
-                        ))
-                        .child(render_form_field(
+                        )
+                        .into_any_element(),
+                        render_form_field(
                             "Fade Duration (s):",
                             app_state.fade_input_validation_message.clone(),
                             app_state.fade_duration_input.clone(),
-                        ))
-                        .child(
-                            render_button(
-                                "run-simulation-button",
-                                "Run Simulation",
-                                &app_state.run_simulation_focus_handle,
-                                |view, _, _, cx| {
-                                    view.run_simulation(cx);
-                                },
-                                cx,
-                            ),
-                        ),
-                )
-                .child(
-                    // Right Panel
-                    div()
-                        .id("right-panel")
-                        .flex_1()
-                        .flex()
-                        .flex_col()
-                        .gap_2()
-                        .p_4()
-                        .border_1()
-                        .border_color(hsla(0., 0., 1., 0.2))
-                        .rounded_md()
-                        .child(div().child("Color Palette"))
-                        .children(key_colors.iter().map(|&key| {
-                            let start_hsla = start_theme.interpolatable_theme.0.get(key).map_or(gpui::black(), |c| c.hsla);
-                            let end_hsla = end_theme.interpolatable_theme.0.get(key).map_or(gpui::black(), |c| c.hsla);
+                        )
+                        .into_any_element(),
+                        render_button(
+                            "run-simulation-button",
+                            "Run Simulation",
+                            &app_state.run_simulation_focus_handle,
+                            |view, _, _, cx| {
+                                view.run_simulation(cx);
+                            },
+                            cx,
+                        )
+                        .into_any_element(),
+                    ],
+                ))
+                .child(render_panel(
+                    "right-panel",
+                    rems(0.5).into(), // gap_2
+                    key_colors
+                        .iter()
+                        .map(|&key| {
+                            let start_hsla = start_theme
+                                .interpolatable_theme
+                                .0
+                                .get(key)
+                                .map_or(gpui::black(), |c| c.hsla);
+                            let end_hsla = end_theme
+                                .interpolatable_theme
+                                .0
+                                .get(key)
+                                .map_or(gpui::black(), |c| c.hsla);
                             div()
                                 .flex()
                                 .flex_col()
                                 .gap_1()
                                 .child(div().text_sm().child(key))
                                 .child(render_gradient_bar(start_hsla, end_hsla))
-                        })),
-                ),
+                                .into_any_element()
+                        })
+                        .collect::<Vec<_>>(),
+                )),
         )
 }
