@@ -1,26 +1,26 @@
 # Project Roadmap: GPUI Theme Scheduler
 
-**Last Updated:** 2025-11-11
+**Last Updated:** 2025-11-12
 
 ## Project Overview
 
-An application to test and demonstrate smooth, animated theme transitions for the Zed editor. It features an interactive UI for on-demand testing and a scheduler for time-based theme changes. The primary goal is to produce a robust, maintainable, and user-friendly tool for developing and showcasing a theme-scheduling Zed extension.
+This project serves as a development environment for a theme scheduling library intended for the Zed editor. It includes a standalone test harness UI to demonstrate and interact with the core scheduling and theme interpolation logic. The primary goal is to produce a robust, modular, and Zed-ready library for theme management.
 
 ## Core Objectives
 
-1.  **Architectural Integrity:** Build a maintainable and scalable application by decoupling components and simplifying state management.
-2.  **User Experience:** Provide a polished, intuitive, and responsive interface for controlling theme simulations.
-3.  **Functional Robustness:** Ensure the core theme transition logic is reliable and performs smoothly under all conditions.
+1.  **Architectural Integrity:** Build a modular, testable, and scalable library by decoupling the core logic from any specific UI implementation.
+2.  **Functional Robustness:** Ensure the core theme scheduling and interpolation logic is reliable and performs smoothly.
+3.  **Developer Experience:** Provide a clear and effective test harness for rapid development and demonstration of the core library's features.
 
 ---
 
-## Phase 1: Architectural Refactoring & UX Polish
+## Phase 1: Core Logic & Architectural Refactoring
 
-This phase focuses on improving the foundational architecture of the application to make it more modular, maintainable, and scalable. These changes will simplify the codebase and make it easier to add new features in the future.
+This phase focuses on separating the core, UI-agnostic logic from the test harness UI. The goal is to create a modular library that can be easily integrated into a Zed extension.
 
 ### 1. State Management Refactoring
 
-- **Description:** Decouple ephemeral UI state from the global `AppState` by moving it into the components that own it. This is the highest-priority architectural improvement.
+- **Description:** Decouple ephemeral UI state from the global `AppState` by moving it into the UI components that own it. This is the highest-priority architectural improvement.
 - **Status:** [ ] Not Started
 - **Priority:** High
 - **Tasks:**
@@ -33,9 +33,9 @@ This phase focuses on improving the foundational architecture of the application
   - [ ] **Create Stateful `ValidatedInput` Component:** Extract the text inputs and their validation logic into a new reusable component.
     - [ ] This component will manage its own validation message state.
 
-### 2. `AppView` Simplification
+### 2. Core Logic Extraction
 
-- **Description:** Slim down the `AppView` "God Object" by extracting distinct areas of logic into more focused, testable modules.
+- **Description:** Slim down the `AppView` "God Object" by extracting distinct areas of logic into more focused, UI-agnostic modules.
 - **Status:** [ ] Not Started
 - **Priority:** Medium
 - **Tasks:**
@@ -43,65 +43,41 @@ This phase focuses on improving the foundational architecture of the application
     - [ ] Create a new module (e.g., `src/simulation.rs`).
     - [ ] Move the core logic from `AppView::run_simulation` into a function within this new module. This function will take the necessary parameters (themes, durations) and handle spawning the async task.
     - [ ] `AppView::run_simulation` will now be a thin wrapper that calls this new function.
-  - [ ] **Extract Scroll Logic:**
+  - [ ] **Isolate UI-Specific Logic:**
     - [ ] Create a new helper function (e.g., in `src/ui.rs` or a new `src/components/util.rs`).
     - [ ] This function will contain the duplicated manual scroll calculation logic from `AppView::select_next_theme` and `AppView::select_prev_theme`.
-    - [ ] Refactor the `AppView` methods to call this new, single helper function.
-
-### 3. UX Enhancements
-
-- **Description:** Implement several small but high-impact UX improvements to make the application feel more polished and professional.
-- **Status:** [ ] Not Started
-- **Priority:** Medium
-- **Tasks:**
-  - [ ] **Implement "Click-Away-to-Close" for Dropdowns:**
-    - [ ] When a dropdown is open, render a transparent, full-screen `div` underneath it.
-    - [ ] This `div` will have an `on_click` handler that closes the active dropdown.
-  - [ ] **Add Visual Cues for Disabled Dropdown Items:**
-    - [ ] In the `dropdown.rs` component, when rendering the list of themes, identify if a theme is disabled (i.e., it's the currently selected theme in the _other_ dropdown).
-    - [ ] Apply a distinct visual style (e.g., `opacity-50`, `text_color` change) to disabled items to make them clearly non-selectable.
-  - [ ] **Add Standard Window Management Keybindings:**
-    - **Description:** Implement standard, platform-conventional key commands for quitting the app, closing a window, and minimizing a window.
-    - **Status:** [ ] Not Started
-    - **Priority:** Medium
-    - **Tasks:**
-      - [ ] **1. Define Actions:** In `src/main.rs`, locate the `// --- 1. ACTIONS ---` section. Define three new, empty structs named `Quit`, `MinimizeActiveWindow`, and `CloseActiveWindow`. Each struct should derive the `Clone`, `PartialEq`, and `Action` traits.
-      - [ ] **2. Bind Keys:** In the `main` function of `src/main.rs`, find the `cx.bind_keys([...])` call. Add three new `KeyBinding` instances to the array.
-        - Bind the "cmd-q" keystroke to the `Quit` action.
-        - Bind the "cmd-w" keystroke to the `CloseActiveWindow` action.
-        - Bind the "cmd-m" keystroke to the `MinimizeActiveWindow` action.
-        - Ensure these bindings are global by passing `None` for the key context argument.
-      - [ ] **3. Implement Global Handlers:** In the `main` function, directly after the `cx.bind_keys` call, add three `cx.on_action(...)` closures to handle the new actions.
-        - The handler for the `Quit` action should call `cx.quit()` to terminate the application.
-        - The handler for `MinimizeActiveWindow` should get the active window via `cx.active_window()`. If a window is present, it should call `window.update(...)` and, within the update closure, call `window.minimize_window()`.
-        - The handler for `CloseActiveWindow` should follow the same pattern as the minimize handler, but call `window.remove_window()` inside the update closure to close it.
+    - [ ] Refactor the `AppView` methods to call this new, single helper function to better isolate this UI-only code.
 
 ---
 
-## Phase 2: New Features
+## Phase 2: Core Feature Development
 
-Once the architecture is solidified, we can begin adding new functionality.
+Once the architecture is solidified, we can begin adding new, core library functionality.
 
-### 1. Camouflaged Colors
+### 1. Configuration Persistence
 
-- **Description:** During faders, certain theme colors blend too closely together, making them difficult to distinguish (text becomes hidden in the background, for example).
-- **Status:** [ ] Not Started
-- **Priority:** Medium-High
-- **Tasks:**
-  - [ ] **Recreate issue** Find examples of themes where this occurs (user task)
-  - [ ] **Determine Root Cause**
-  - [ ] **Devise Solution**
-  - [ ] **Implement Solution**
-
-### 2. Configuration Persistence
-
-- **Description:** Save and load the user's settings to provide a consistent experience between sessions.
+- **Description:** Save and load the user's settings to provide a consistent experience between sessions. This will be designed as a core feature that the Zed extension can leverage.
 - **Status:** [ ] Not Started
 - **Priority:** Low
 - **Tasks:**
   - [ ] **Define Config Struct:** Create a new struct that can be serialized/deserialized (e.g., with `serde`) to hold settings like `start_theme_index`, `end_theme_index`, `sleep_duration`, and `fade_duration`.
-  - [ ] **Implement Save Logic:** On a clean application shutdown or after a setting is changed, serialize the config struct to a file (e.g., `config.json`).
-  - [ ] **Implement Load Logic:** On application startup, check for the existence of `config.json` and load its values into the initial `AppState`.
+  - [ ] **Implement Save/Load Logic:** On application startup and shutdown, serialize/deserialize the config struct to a file (e.g., `config.json`).
+
+---
+
+## Phase 3 (Optional): Test Harness Polish
+
+These tasks improve the standalone test application but do not contribute directly to the Zed extension. They should only be worked on if deemed necessary for improving the development experience.
+
+### 1. UX Enhancements
+
+- **Description:** Implement several small but high-impact UX improvements to make the test application feel more polished.
+- **Status:** [ ] Not Started
+- **Priority:** Very Low
+- **Tasks:**
+  - [ ] **Implement "Click-Away-to-Close" for Dropdowns.**
+  - [ ] **Add Visual Cues for Disabled Dropdown Items.**
+  - [ ] **Add Standard Window Management Keybindings (`cmd-q`, `cmd-w`, `cmd-m`).**
 
 ---
 
@@ -112,5 +88,5 @@ Once the architecture is solidified, we can begin adding new functionality.
 - [x] **Dynamic Theme Loading:** Replaced hardcoded themes with a dynamic system that loads all `.json` files from the `assets/` directory.
 - [x] **Component Extraction:** Began refactoring the UI by extracting components like `Button`, `Panel`, and `Dropdown` into the `src/components/` directory.
 - [x] **Independent Theme Selectors:** Refactored the UI to allow independent selection of start and end themes.
-- [x] **Full Keyboard Navigation:** Implemented comprehensive keyboard controls for all interactive elements, including focus cycling (`Tab`), submission (`Enter`), and dropdown navigation (`Up`/`Down`/`Enter`/`Escape`).
-- [x] **Auto-Scrolling Dropdowns:** Implemented manual scroll logic to ensure the highlighted item in a dropdown is always visible during keyboard navigation.
+- [x] **Full Keyboard Navigation:** Implemented comprehensive keyboard controls for all interactive elements.
+- [x] **Auto-Scrolling Dropdowns:** Implemented manual scroll logic to ensure the highlighted item in a dropdown is always visible.
