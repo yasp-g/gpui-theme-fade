@@ -7,7 +7,7 @@ use crate::components::panel::render_panel;
 use gpui::{Context, IntoElement, div, prelude::*, rems};
 
 pub fn render_interactive_ui(
-    _view: &mut crate::AppView,
+    view: &mut crate::AppView,
     cx: &mut Context<crate::AppView>,
 ) -> impl IntoElement {
     let app_state = cx.global::<crate::AppState>().clone();
@@ -64,12 +64,12 @@ pub fn render_interactive_ui(
                                 "start-theme-button",
                                 "start-theme",
                                 "start-theme-scroll",
-                                app_state.start_dropdown_open,
-                                &app_state.theme_selector_focus_handle,
-                                &app_state.start_theme_scroll_handle,
+                                view.start_dropdown_state.is_open,
+                                &view.start_dropdown_state.focus_handle,
+                                &view.start_dropdown_state.scroll_handle,
                                 &app_state.themes,
                                 app_state.start_theme_index,
-                                app_state.start_preview_index,
+                                view.start_dropdown_state.preview_index,
                                 &[app_state.end_theme_index],
                                 active_theme,
                                 |view, _, _, cx| view.toggle_start_dropdown(cx),
@@ -86,12 +86,12 @@ pub fn render_interactive_ui(
                                 "end-theme-button",
                                 "end-theme",
                                 "end-theme-scroll",
-                                app_state.end_dropdown_open,
-                                &app_state.end_theme_selector_focus_handle,
-                                &app_state.end_theme_scroll_handle,
+                                view.end_dropdown_state.is_open,
+                                &view.end_dropdown_state.focus_handle,
+                                &view.end_dropdown_state.scroll_handle,
                                 &app_state.themes,
                                 app_state.end_theme_index,
-                                app_state.end_preview_index,
+                                view.end_dropdown_state.preview_index,
                                 &[app_state.start_theme_index],
                                 active_theme,
                                 |view, _, _, cx| view.toggle_end_dropdown(cx),
@@ -102,20 +102,20 @@ pub fn render_interactive_ui(
                         .into_any_element(),
                         render_form_field(
                             "Sleep Duration (s):",
-                            app_state.sleep_input_validation_message.clone(),
-                            app_state.sleep_duration_input.clone(),
+                            view.sleep_input_state.validation_message.clone(),
+                            view.sleep_input_state.input.clone(),
                         )
                         .into_any_element(),
                         render_form_field(
                             "Fade Duration (s):",
-                            app_state.fade_input_validation_message.clone(),
-                            app_state.fade_duration_input.clone(),
+                            view.fade_input_state.validation_message.clone(),
+                            view.fade_input_state.input.clone(),
                         )
                         .into_any_element(),
                         render_button(
                             "run-simulation-button",
                             "Run Simulation",
-                            &app_state.run_simulation_focus_handle,
+                            &view.run_simulation_focus_handle,
                             |view, _, _, cx| {
                                 view.run_simulation(cx);
                             },

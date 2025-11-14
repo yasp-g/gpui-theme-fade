@@ -1,26 +1,27 @@
 use chrono::{Duration as ChronoDuration, Local};
 use futures::{StreamExt, channel::mpsc};
 use gpui::{
-    point, px, Action, App, AppContext, Application, AsyncApp, Context, Entity, FocusHandle,
-    Global, IntoElement, KeyBinding, Render, ScrollHandle, SharedString, Window, div, prelude::*,
+    Action, App, AppContext, Application, AsyncApp, Context, Entity, FocusHandle, Global,
+    IntoElement, KeyBinding, Render, ScrollHandle, SharedString, Window, div, point, prelude::*,
+    px,
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
 use std::{fs, sync::Arc};
 use tracing::info;
 
+pub mod components;
 pub mod scheduler;
 pub mod text_input;
-pub mod ui;
-pub mod components;
 pub mod theme;
+pub mod ui;
 
 use scheduler::{ScheduleEntry, ThemeScheduler};
 use text_input::{
     Backspace, Copy, Cut, Delete, End, Home, Left, Paste, Right, SelectAll, SelectLeft,
     SelectRight, TextInput,
 };
-use theme::{flatten_colors, InterpolatableTheme, Theme, ZedThemeFile};
+use theme::{InterpolatableTheme, Theme, ZedThemeFile, flatten_colors};
 
 // --- 1. ACTIONS ---
 
@@ -68,6 +69,34 @@ impl Default for AppMode {
     }
 }
 
+// New struct for dropdown-specific state
+pub struct DropdownState {
+    pub is_open: bool,
+    pub preview_index: usize,
+    pub scroll_handle: ScrollHandle,
+    pub focus_handle: FocusHandle,
+}
+
+impl DropdownState {
+    pub fn new(initial_index: usize, tab_index: usize, cx: &mut Context<AppView>) -> Self {
+        Self {
+            is_open: false,
+            preview_index: initial_index,
+            scroll_handle: ScrollHandle::new(),
+            focus_handle: cx
+                .focus_handle()
+                .tab_index(tab_index as isize)
+                .tab_stop(true),
+        }
+    }
+}
+
+// New struct for validated input state
+pub struct ValidatedInputState {
+    pub input: Entity<TextInput>,
+    pub validation_message: Option<SharedString>,
+}
+
 // --- 3. GPUI GLOBAL STATE ---
 
 /// This is the global `AppState` that our UI will read from and update.
@@ -77,19 +106,6 @@ pub struct AppState {
     pub themes: Vec<Theme>,
     pub start_theme_index: usize,
     pub end_theme_index: usize,
-    pub start_preview_index: usize,
-    pub end_preview_index: usize,
-    pub sleep_duration_input: Entity<TextInput>,
-    pub fade_duration_input: Entity<TextInput>,
-    pub theme_selector_focus_handle: FocusHandle,
-    pub end_theme_selector_focus_handle: FocusHandle,
-    pub start_theme_scroll_handle: ScrollHandle,
-    pub end_theme_scroll_handle: ScrollHandle,
-    pub run_simulation_focus_handle: FocusHandle,
-    pub sleep_input_validation_message: Option<SharedString>,
-    pub fade_input_validation_message: Option<SharedString>,
-    pub start_dropdown_open: bool,
-    pub end_dropdown_open: bool,
     // The currently active theme, which the UI renders.
     pub active_theme: InterpolatableTheme,
 }
@@ -98,9 +114,37 @@ impl Global for AppState {}
 
 // --- 5. THE MAIN UI VIEW (REFACTORED) ---
 
-pub struct AppView;
+pub struct AppView {
+    pub start_dropdown_state: DropdownState,
+    pub end_dropdown_state: DropdownState,
+    pub sleep_input_state: ValidatedInputState,
+    pub fade_input_state: ValidatedInputState,
+    pub run_simulation_focus_handle: FocusHandle,
+}
 
 impl AppView {
+    pub fn new(
+        cx: &mut Context<Self>,
+        sleep_input: Entity<TextInput>,
+        fade_input: Entity<TextInput>,
+    ) -> Self {
+        let end_theme_index = cx.global::<AppState>().themes.len().saturating_sub(1);
+
+        Self {
+            start_dropdown_state: DropdownState::new(0, 1, cx),
+            end_dropdown_state: DropdownState::new(end_theme_index, 2, cx),
+            sleep_input_state: ValidatedInputState {
+                input: sleep_input,
+                validation_message: None,
+            },
+            fade_input_state: ValidatedInputState {
+                input: fade_input,
+                validation_message: None,
+            },
+            run_simulation_focus_handle: cx.focus_handle().tab_index(5).tab_stop(true),
+        }
+    }
+
     fn on_focus_next(&mut self, _: &FocusNext, window: &mut Window, _: &mut Context<Self>) {
         window.focus_next();
     }
@@ -114,30 +158,26 @@ impl AppView {
     }
 
     pub fn toggle_start_dropdown(&mut self, cx: &mut Context<Self>) {
-        cx.update_global::<AppState, _>(|app_state, _| {
-            app_state.start_dropdown_open = !app_state.start_dropdown_open;
-            if app_state.start_dropdown_open {
-                app_state.start_preview_index = app_state.start_theme_index;
-                app_state.end_dropdown_open = false;
-            }
-        });
+        self.start_dropdown_state.is_open = !self.start_dropdown_state.is_open;
+        if self.start_dropdown_state.is_open {
+            self.start_dropdown_state.preview_index = cx.global::<AppState>().start_theme_index;
+            self.end_dropdown_state.is_open = false;
+        }
+        cx.notify();
     }
 
     pub fn toggle_end_dropdown(&mut self, cx: &mut Context<Self>) {
-        cx.update_global::<AppState, _>(|app_state, _| {
-            app_state.end_dropdown_open = !app_state.end_dropdown_open;
-            if app_state.end_dropdown_open {
-                app_state.end_preview_index = app_state.end_theme_index;
-                app_state.start_dropdown_open = false;
-            }
-        });
+        self.end_dropdown_state.is_open = !self.end_dropdown_state.is_open;
+        if self.end_dropdown_state.is_open {
+            self.end_dropdown_state.preview_index = cx.global::<AppState>().end_theme_index;
+            self.start_dropdown_state.is_open = false;
+        }
+        cx.notify();
     }
 
     pub fn close_dropdowns(&mut self, cx: &mut Context<Self>) {
-        cx.update_global::<AppState, _>(|app_state, _| {
-            app_state.start_dropdown_open = false;
-            app_state.end_dropdown_open = false;
-        });
+        self.start_dropdown_state.is_open = false;
+        self.end_dropdown_state.is_open = false;
         cx.notify();
     }
 
@@ -149,9 +189,9 @@ impl AppView {
                 let theme = &app_state.themes[index].interpolatable_theme;
                 app_state.active_theme = theme.clone();
             }
-            // Always close dropdown on selection attempt
-            app_state.start_dropdown_open = false;
         });
+        self.start_dropdown_state.is_open = false;
+        cx.notify();
     }
 
     pub fn select_end_theme(&mut self, index: usize, cx: &mut Context<Self>) {
@@ -159,179 +199,116 @@ impl AppView {
             if index != app_state.start_theme_index {
                 app_state.end_theme_index = index;
             }
-            // Always close dropdown on selection attempt
-            app_state.end_dropdown_open = false;
         });
+        self.end_dropdown_state.is_open = false;
+        cx.notify();
     }
 
     pub fn select_next_theme(&mut self, window: &Window, cx: &mut Context<Self>) {
-        cx.update_global::<AppState, _>(|app_state, _| {
-            let theme_count = app_state.themes.len();
-            if theme_count < 2 {
-                return;
-            }
-
-            if app_state.start_dropdown_open {
-                let disabled_index = app_state.end_theme_index;
-                let mut current_index = app_state.start_preview_index;
-                while current_index < theme_count - 1 {
-                    current_index += 1;
-                    if current_index != disabled_index {
-                        app_state.start_preview_index = current_index;
-                        return; // Found it, update and exit
-                    }
-                }
-            } else if app_state.end_dropdown_open {
-                let disabled_index = app_state.start_theme_index;
-                let mut current_index = app_state.end_preview_index;
-                while current_index < theme_count - 1 {
-                    current_index += 1;
-                    if current_index != disabled_index {
-                        app_state.end_preview_index = current_index;
-                        return; // Found it, update and exit
-                    }
-                }
-            }
-        });
-
         let app_state = cx.global::<AppState>();
+        let theme_count = app_state.themes.len();
+        if theme_count < 2 {
+            return;
+        }
 
-        // If dropdowns were closed, check focus and open the correct one.
-        if !app_state.start_dropdown_open && !app_state.end_dropdown_open {
-            if app_state.theme_selector_focus_handle.is_focused(window) {
+        let (dropdown_state, disabled_index) = if self.start_dropdown_state.is_open {
+            (&mut self.start_dropdown_state, app_state.end_theme_index)
+        } else if self.end_dropdown_state.is_open {
+            (&mut self.end_dropdown_state, app_state.start_theme_index)
+        } else {
+            // If dropdowns were closed, check focus and open the correct one.
+            if self.start_dropdown_state.focus_handle.is_focused(window) {
                 self.toggle_start_dropdown(cx);
-            } else if app_state.end_theme_selector_focus_handle.is_focused(window) {
+            } else if self.end_dropdown_state.focus_handle.is_focused(window) {
                 self.toggle_end_dropdown(cx);
             }
-        } else {
-            // --- Manual Scroll Calculation ---
-            let rem_size = window.rem_size();
-            // An item has p-2, which is 0.5rem top and 0.5rem bottom padding.
-            let item_height = window.line_height() + rem_size;
+            cx.notify();
+            return;
+        };
 
-            if app_state.start_dropdown_open {
-                let scroll_handle = &app_state.start_theme_scroll_handle;
-                let container_bounds = scroll_handle.bounds();
-                if container_bounds.size.height > px(0.0) {
-                    let current_offset = scroll_handle.offset().y;
-                    let item_top = item_height * app_state.start_preview_index as f32;
-                    let item_bottom = item_top + item_height;
-                    let visible_top = -current_offset;
-                    let visible_bottom = visible_top + container_bounds.size.height;
-
-                    let mut new_offset_y = current_offset;
-                    if item_top < visible_top {
-                        new_offset_y = -item_top;
-                    } else if item_bottom > visible_bottom {
-                        new_offset_y = -(item_bottom - container_bounds.size.height);
-                    }
-                    scroll_handle.set_offset(point(px(0.0), new_offset_y));
-                }
-            } else if app_state.end_dropdown_open {
-                let scroll_handle = &app_state.end_theme_scroll_handle;
-                let container_bounds = scroll_handle.bounds();
-                if container_bounds.size.height > px(0.0) {
-                    let current_offset = scroll_handle.offset().y;
-                    let item_top = item_height * app_state.end_preview_index as f32;
-                    let item_bottom = item_top + item_height;
-                    let visible_top = -current_offset;
-                    let visible_bottom = visible_top + container_bounds.size.height;
-
-                    let mut new_offset_y = current_offset;
-                    if item_top < visible_top {
-                        new_offset_y = -item_top;
-                    } else if item_bottom > visible_bottom {
-                        new_offset_y = -(item_bottom - container_bounds.size.height);
-                    }
-                    scroll_handle.set_offset(point(px(0.0), new_offset_y));
-                }
+        let mut current_index = dropdown_state.preview_index;
+        while current_index < theme_count - 1 {
+            current_index += 1;
+            if current_index != disabled_index {
+                dropdown_state.preview_index = current_index;
+                break;
             }
+        }
+
+        // --- Manual Scroll Calculation ---
+        let rem_size = window.rem_size();
+        let item_height = window.line_height() + rem_size;
+        let scroll_handle = &dropdown_state.scroll_handle;
+        let container_bounds = scroll_handle.bounds();
+        if container_bounds.size.height > px(0.0) {
+            let current_offset = scroll_handle.offset().y;
+            let item_top = item_height * dropdown_state.preview_index as f32;
+            let item_bottom = item_top + item_height;
+            let visible_top = -current_offset;
+            let visible_bottom = visible_top + container_bounds.size.height;
+
+            let mut new_offset_y = current_offset;
+            if item_top < visible_top {
+                new_offset_y = -item_top;
+            } else if item_bottom > visible_bottom {
+                new_offset_y = -(item_bottom - container_bounds.size.height);
+            }
+            scroll_handle.set_offset(point(px(0.0), new_offset_y));
         }
 
         cx.notify();
     }
 
     pub fn select_prev_theme(&mut self, window: &Window, cx: &mut Context<Self>) {
-        cx.update_global::<AppState, _>(|app_state, _| {
-            if app_state.themes.len() < 2 {
-                return;
-            }
-
-            if app_state.start_dropdown_open {
-                let disabled_index = app_state.end_theme_index;
-                let mut current_index = app_state.start_preview_index;
-                while current_index > 0 {
-                    current_index -= 1;
-                    if current_index != disabled_index {
-                        app_state.start_preview_index = current_index;
-                        return; // Found it, update and exit
-                    }
-                }
-            } else if app_state.end_dropdown_open {
-                let disabled_index = app_state.start_theme_index;
-                let mut current_index = app_state.end_preview_index;
-                while current_index > 0 {
-                    current_index -= 1;
-                    if current_index != disabled_index {
-                        app_state.end_preview_index = current_index;
-                        return; // Found it, update and exit
-                    }
-                }
-            }
-        });
-
         let app_state = cx.global::<AppState>();
+        let theme_count = app_state.themes.len();
+        if theme_count < 2 {
+            return;
+        }
 
-        // If dropdowns were closed, check focus and open the correct one.
-        if !app_state.start_dropdown_open && !app_state.end_dropdown_open {
-            if app_state.theme_selector_focus_handle.is_focused(window) {
+        let (dropdown_state, disabled_index) = if self.start_dropdown_state.is_open {
+            (&mut self.start_dropdown_state, app_state.end_theme_index)
+        } else if self.end_dropdown_state.is_open {
+            (&mut self.end_dropdown_state, app_state.start_theme_index)
+        } else {
+            // If dropdowns were closed, check focus and open the correct one.
+            if self.start_dropdown_state.focus_handle.is_focused(window) {
                 self.toggle_start_dropdown(cx);
-            } else if app_state.end_theme_selector_focus_handle.is_focused(window) {
+            } else if self.end_dropdown_state.focus_handle.is_focused(window) {
                 self.toggle_end_dropdown(cx);
             }
-        } else {
-            // --- Manual Scroll Calculation ---
-            let rem_size = window.rem_size();
-            // An item has p-2, which is 0.5rem top and 0.5rem bottom padding.
-            let item_height = window.line_height() + rem_size;
+            cx.notify();
+            return;
+        };
 
-            if app_state.start_dropdown_open {
-                let scroll_handle = &app_state.start_theme_scroll_handle;
-                let container_bounds = scroll_handle.bounds();
-                if container_bounds.size.height > px(0.0) {
-                    let current_offset = scroll_handle.offset().y;
-                    let item_top = item_height * app_state.start_preview_index as f32;
-                    let item_bottom = item_top + item_height;
-                    let visible_top = -current_offset;
-                    let visible_bottom = visible_top + container_bounds.size.height;
-
-                    let mut new_offset_y = current_offset;
-                    if item_top < visible_top {
-                        new_offset_y = -item_top;
-                    } else if item_bottom > visible_bottom {
-                        new_offset_y = -(item_bottom - container_bounds.size.height);
-                    }
-                    scroll_handle.set_offset(point(px(0.0), new_offset_y));
-                }
-            } else if app_state.end_dropdown_open {
-                let scroll_handle = &app_state.end_theme_scroll_handle;
-                let container_bounds = scroll_handle.bounds();
-                if container_bounds.size.height > px(0.0) {
-                    let current_offset = scroll_handle.offset().y;
-                    let item_top = item_height * app_state.end_preview_index as f32;
-                    let item_bottom = item_top + item_height;
-                    let visible_top = -current_offset;
-                    let visible_bottom = visible_top + container_bounds.size.height;
-
-                    let mut new_offset_y = current_offset;
-                    if item_top < visible_top {
-                        new_offset_y = -item_top;
-                    } else if item_bottom > visible_bottom {
-                        new_offset_y = -(item_bottom - container_bounds.size.height);
-                    }
-                    scroll_handle.set_offset(point(px(0.0), new_offset_y));
-                }
+        let mut current_index = dropdown_state.preview_index;
+        while current_index > 0 {
+            current_index -= 1;
+            if current_index != disabled_index {
+                dropdown_state.preview_index = current_index;
+                break;
             }
+        }
+
+        // --- Manual Scroll Calculation ---
+        let rem_size = window.rem_size();
+        let item_height = window.line_height() + rem_size;
+        let scroll_handle = &dropdown_state.scroll_handle;
+        let container_bounds = scroll_handle.bounds();
+        if container_bounds.size.height > px(0.0) {
+            let current_offset = scroll_handle.offset().y;
+            let item_top = item_height * dropdown_state.preview_index as f32;
+            let item_bottom = item_top + item_height;
+            let visible_top = -current_offset;
+            let visible_bottom = visible_top + container_bounds.size.height;
+
+            let mut new_offset_y = current_offset;
+            if item_top < visible_top {
+                new_offset_y = -item_top;
+            } else if item_bottom > visible_bottom {
+                new_offset_y = -(item_bottom - container_bounds.size.height);
+            }
+            scroll_handle.set_offset(point(px(0.0), new_offset_y));
         }
 
         cx.notify();
@@ -356,14 +333,13 @@ impl AppView {
     }
 
     pub fn confirm_theme(&mut self, window: &Window, cx: &mut Context<Self>) {
-        let app_state = cx.global::<AppState>();
-        if app_state.start_dropdown_open {
-            self.select_start_theme(app_state.start_preview_index, cx);
-        } else if app_state.end_dropdown_open {
-            self.select_end_theme(app_state.end_preview_index, cx);
-        } else if app_state.theme_selector_focus_handle.is_focused(window) {
+        if self.start_dropdown_state.is_open {
+            self.select_start_theme(self.start_dropdown_state.preview_index, cx);
+        } else if self.end_dropdown_state.is_open {
+            self.select_end_theme(self.end_dropdown_state.preview_index, cx);
+        } else if self.start_dropdown_state.focus_handle.is_focused(window) {
             self.toggle_start_dropdown(cx);
-        } else if app_state.end_theme_selector_focus_handle.is_focused(window) {
+        } else if self.end_dropdown_state.focus_handle.is_focused(window) {
             self.toggle_end_dropdown(cx);
         }
     }
@@ -376,52 +352,36 @@ impl AppView {
     fn on_cancel(&mut self, _: &Cancel, _window: &mut Window, cx: &mut Context<Self>) {
         self.close_dropdowns(cx);
     }
-
     fn run_simulation(&mut self, cx: &mut Context<Self>) {
-        // First, get the necessary state from the global state.
-        let (sleep_input_handle, fade_input_handle, start_theme, end_theme) = cx.read_global(
-            |app_state: &AppState, _|
+        let sleep_content = self.sleep_input_state.input.read(cx).content.clone();
+        let fade_content = self.fade_input_state.input.read(cx).content.clone();
+
+        // Perform validation.
+        let sleep_seconds = sleep_content.parse::<f32>();
+        let fade_seconds = fade_content.parse::<f32>();
+
+        self.sleep_input_state.validation_message = match sleep_seconds {
+            Ok(s) if (0.0..=600.0).contains(&s) => None,
+            _ => Some("Value must be between 0 and 600.".into()),
+        };
+        self.fade_input_state.validation_message = match fade_seconds {
+            Ok(f) if (0.0..=600.0).contains(&f) => None,
+            _ => Some("Value must be between 0 and 600.".into()),
+        };
+
+        // Only run the simulation if both inputs are valid.
+        if self.sleep_input_state.validation_message.is_none()
+            && self.fade_input_state.validation_message.is_none()
+        {
+            let (start_theme, end_theme) = cx.read_global(|app_state: &AppState, _| {
                 (
-                    app_state.sleep_duration_input.clone(),
-                    app_state.fade_duration_input.clone(),
                     app_state.themes[app_state.start_theme_index]
                         .interpolatable_theme
                         .clone(),
                     app_state.themes[app_state.end_theme_index]
                         .interpolatable_theme
                         .clone(),
-                ),
-        );
-
-        // Now, use the window context `cx` to read the entity state.
-        let sleep_content = sleep_input_handle.read(cx).content.clone();
-        let fade_content = fade_input_handle.read(cx).content.clone();
-
-        // Perform validation.
-        let sleep_seconds = sleep_content.parse::<f32>();
-        let fade_seconds = fade_content.parse::<f32>();
-
-        let sleep_validation_message = match sleep_seconds {
-            Ok(s) if (0.0..=600.0).contains(&s) => None,
-            _ => Some("Value must be between 0 and 600.".into()),
-        };
-        let fade_validation_message = match fade_seconds {
-            Ok(f) if (0.0..=600.0).contains(&f) => None,
-            _ => Some("Value must be between 0 and 600.".into()),
-        };
-
-        // Update the validity flags in AppState.
-        cx.update_global(|app_state: &mut AppState, _| {
-            app_state.sleep_input_validation_message = sleep_validation_message.clone();
-            app_state.fade_input_validation_message = fade_validation_message.clone();
-        });
-
-        // Only run the simulation if both inputs are valid.
-        if sleep_validation_message.is_none() && fade_validation_message.is_none() {
-            // Clear messages on successful run
-            cx.update_global(|app_state: &mut AppState, _| {
-                app_state.sleep_input_validation_message = None;
-                app_state.fade_input_validation_message = None;
+                )
             });
 
             let sleep = sleep_seconds.unwrap();
@@ -430,14 +390,12 @@ impl AppView {
             let fade_duration = ChronoDuration::seconds(fade as i64);
 
             // Get theme names for logging
-            let (start_theme_name, end_theme_name) = cx.read_global(
-                |app_state: &AppState, _| {
-                    (
-                        app_state.themes[app_state.start_theme_index].name.clone(),
-                        app_state.themes[app_state.end_theme_index].name.clone(),
-                    )
-                },
-            );
+            let (start_theme_name, end_theme_name) = cx.read_global(|app_state: &AppState, _| {
+                (
+                    app_state.themes[app_state.start_theme_index].name.clone(),
+                    app_state.themes[app_state.end_theme_index].name.clone(),
+                )
+            });
 
             info!(
                 "Running simulation: Start='{}', End='{}'",
@@ -480,6 +438,8 @@ impl AppView {
             })
             .detach();
         }
+
+        cx.notify();
     }
 
     fn render_interactive_ui(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
@@ -492,16 +452,18 @@ impl Render for AppView {
         let app_state = cx.global::<AppState>().clone();
 
         // Logic to close dropdowns if they lose focus
-        if app_state.start_dropdown_open
-            && !app_state
-                .theme_selector_focus_handle
+        if self.start_dropdown_state.is_open
+            && !self
+                .start_dropdown_state
+                .focus_handle
                 .contains_focused(window, cx)
         {
             self.close_dropdowns(cx);
         }
-        if app_state.end_dropdown_open
-            && !app_state
-                .end_theme_selector_focus_handle
+        if self.end_dropdown_state.is_open
+            && !self
+                .end_dropdown_state
+                .focus_handle
                 .contains_focused(window, cx)
         {
             self.close_dropdowns(cx);
@@ -535,28 +497,6 @@ impl Render for AppView {
             AppMode::Interactive => self.render_interactive_ui(cx).into_any_element(),
         }
     }
-}
-
-fn create_duration_input(
-    cx: &mut App,
-    content: impl Into<SharedString>,
-    placeholder: impl Into<SharedString>,
-    tab_index: usize,
-) -> Entity<TextInput> {
-    cx.new(|cx| TextInput {
-        focus_handle: cx
-            .focus_handle()
-            .tab_index(tab_index as isize)
-            .tab_stop(true),
-        content: content.into(),
-        placeholder: placeholder.into(),
-        selected_range: 0..0,
-        selection_reversed: false,
-        marked_range: None,
-        last_layout: None,
-        last_bounds: None,
-        is_selecting: false,
-    })
 }
 
 fn main() {
@@ -596,8 +536,6 @@ fn main() {
         })
         .collect();
 
-
-
     Application::new().run(move |cx: &mut App| {
         cx.bind_keys([
             KeyBinding::new("backspace", Backspace, Some("TextInput")),
@@ -631,14 +569,6 @@ fn main() {
             .map(|theme| theme.interpolatable_theme.clone())
             .expect("Failed to get initial theme");
 
-        let sleep_duration_input = create_duration_input(cx, "10", "Sleep seconds...", 3);
-        let fade_duration_input = create_duration_input(cx, "10", "Fade seconds...", 4);
-        let theme_selector_focus_handle = cx.focus_handle().tab_index(1).tab_stop(true);
-        let end_theme_selector_focus_handle = cx.focus_handle().tab_index(2).tab_stop(true);
-        let start_theme_scroll_handle = ScrollHandle::new();
-        let end_theme_scroll_handle = ScrollHandle::new();
-        let run_simulation_focus_handle = cx.focus_handle().tab_index(5).tab_stop(true);
-
         let end_theme_index = if all_themes.len() > 1 { 1 } else { 0 };
 
         cx.set_global(AppState {
@@ -646,25 +576,37 @@ fn main() {
             themes: all_themes,
             start_theme_index: 0, // Default to the first theme
             end_theme_index,      // Default to the second theme if available
-            start_preview_index: 0,
-            end_preview_index: end_theme_index,
-            sleep_duration_input,
-            fade_duration_input,
-            theme_selector_focus_handle,
-            end_theme_selector_focus_handle,
-            start_theme_scroll_handle,
-            end_theme_scroll_handle,
-            run_simulation_focus_handle,
-            sleep_input_validation_message: None,
-            fade_input_validation_message: None,
-            start_dropdown_open: false,
-            end_dropdown_open: false,
             active_theme: initial_active_theme,
+        });
+
+        let sleep_duration_input = cx.new(|cx| TextInput {
+            focus_handle: cx.focus_handle().tab_index(3).tab_stop(true),
+            content: "10".into(),
+            placeholder: "Sleep seconds...".into(),
+            selected_range: 0..0,
+            selection_reversed: false,
+            marked_range: None,
+            last_layout: None,
+            last_bounds: None,
+            is_selecting: false,
+        });
+        let fade_duration_input = cx.new(|cx| TextInput {
+            focus_handle: cx.focus_handle().tab_index(4).tab_stop(true),
+            content: "10".into(),
+            placeholder: "Fade seconds...".into(),
+            selected_range: 0..0,
+            selection_reversed: false,
+            marked_range: None,
+            last_layout: None,
+            last_bounds: None,
+            is_selecting: false,
         });
 
         // --- Open Window and Set Window-Specific Handlers ---
         let _ = cx
-            .open_window(Default::default(), |_, cx| cx.new(|_| AppView))
+            .open_window(Default::default(), |_, cx| {
+                cx.new(|cx| AppView::new(cx, sleep_duration_input, fade_duration_input))
+            })
             .unwrap();
     });
 }

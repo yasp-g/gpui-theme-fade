@@ -21,17 +21,18 @@ This phase focuses on separating the core, UI-agnostic logic from the test harne
 ### 1. State Management Refactoring
 
 - **Description:** Decouple ephemeral UI state from the global `AppState` by moving it into the UI components that own it. This is the highest-priority architectural improvement.
-- **Status:** [ ] Not Started
+- **Status:** [x] Completed
 - **Priority:** High
 - **Tasks:**
-  - [ ] **Simplify `AppState`:** Remove UI-specific state fields (`start_dropdown_open`, `end_dropdown_open`, `start_preview_index`, `end_preview_index`, `sleep_input_validation_message`, `fade_input_validation_message`) from the `AppState` struct in `src/main.rs`.
-  - [ ] **Create Stateful `Dropdown` Component:** Refactor the `dropdown.rs` component to be a proper stateful GPUI view.
-    - [ ] It should manage its own internal state, such as `is_open` and `preview_index`.
-    - [ ] It will receive the list of themes and the currently selected index as props.
-    - [ ] It will use a callback prop (e.g., `on_select`) to notify the parent view of a selection change.
-  - [ ] **Update UI:** Modify `src/ui.rs` to use the new stateful `Dropdown` component, passing in the required props and callbacks.
-  - [ ] **Create Stateful `ValidatedInput` Component:** Extract the text inputs and their validation logic into a new reusable component.
-    - [ ] This component will manage its own validation message state.
+  - [x] **Simplify `AppState`:** Remove UI-specific state fields (`start_dropdown_open`, `end_dropdown_open`, `start_preview_index`, `end_preview_index`, `sleep_input_validation_message`, `fade_input_validation_message`) from the `AppState` struct in `src/main.rs`.
+  - [x] **Create Stateful `Dropdown` Component:** Refactor the `dropdown.rs` component to be a proper stateful GPUI view.
+    - [x] Its ephemeral UI state (`is_open`, `preview_index`, `focus_handle`, `scroll_handle`) is now managed by `AppView` via a `DropdownState` struct and passed to the stateless `render_dropdown` function.
+    - [x] It receives the list of themes and the currently selected index as props.
+    - [x] It uses callbacks (e.g., `on_select`) to notify the parent view of a selection change.
+  - [x] **Update UI:** Modified `src/ui.rs` to use the `DropdownState` from `AppView` when calling the `render_dropdown` function, passing in the required props and callbacks.
+  - [x] **Create Stateful `ValidatedInput` Component:** Extract the text inputs and their validation logic into a new reusable component.
+    - [x] The `TextInput` entities and their corresponding `validation_message` are now owned by `AppView` via a `ValidatedInputState` struct.
+    - [x] The validation logic in `run_simulation` now mutates the state on `AppView` directly, removing the need to pass state through the global `AppState`.
 
 ### 2. Core Logic Extraction
 
@@ -54,7 +55,27 @@ This phase focuses on separating the core, UI-agnostic logic from the test harne
 
 Once the architecture is solidified, we can begin adding new, core library functionality.
 
-### 1. Configuration Persistence
+### 1. Theme Integration with Zed Settings
+
+- **Description:** Integrate the theme scheduler with Zed's settings system to allow programmatic theme changes. This is the primary mechanism for the final Zed extension to function.
+- **Status:** [ ] Not Started
+- **Priority:** High
+- **Tasks:**
+  - [ ] Adapt the core scheduling logic to call `settings::update_settings_file` when a theme change is due.
+  - [ ] Inside the `update_settings_file` closure, use the `theme::settings::set_theme` helper to modify the `SettingsContent` with the new theme name.
+  - [ ] Ensure the scheduler has access to the necessary `Fs` and `AppContext` handles to perform this operation.
+
+### 2. Zed Extension Structure and Theme Access
+
+- **Description:** Define the project's structure as a Zed extension and adapt its theme loading mechanism to use Zed's internal theme registry.
+- **Status:** [ ] Not Started
+- **Priority:** High
+- **Tasks:**
+  - [ ] Investigate Zed's extension loading mechanism and define the `Cargo.toml` and entry point for our extension.
+  - [ ] Understand how Zed extensions access the available themes from Zed's `ThemeRegistry`.
+  - [ ] Adapt our theme loading mechanism to use Zed's API instead of reading theme files directly from the `assets/` directory.
+
+### 3. Configuration Persistence
 
 - **Description:** Save and load the user's settings to provide a consistent experience between sessions. This will be designed as a core feature that the Zed extension can leverage.
 - **Status:** [ ] Not Started
