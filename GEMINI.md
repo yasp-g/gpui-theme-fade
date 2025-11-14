@@ -54,6 +54,27 @@ This process ensures that we always have a clear, up-to-date view of the project
 
 ---
 
+## Zed Integration Notes: Changing the Theme
+
+Investigation into the Zed source code (`sandbox/zed-source/zed/`) has revealed the primary mechanism for programmatically changing the active theme. This is the core integration point for our theme scheduler extension.
+
+- **No Direct Action:** There is no simple, global `Action` to dispatch for setting a theme (e.g., `actions::SetTheme("MyTheme")`). The theme is changed by modifying the user's settings file.
+
+- **The Key Function:** The central function for persisting a settings change is `settings::update_settings_file`.
+    - **Location:** `crates/settings/src/settings_file.rs`
+    - **Signature:** `pub fn update_settings_file(fs: Arc<dyn Fs>, cx: &App, update: impl FnOnce(&mut SettingsContent, &App))`
+
+- **Mechanism:** To change the theme, our extension must call `update_settings_file`. This function takes a closure that receives a mutable `SettingsContent` object. Our code will run inside this closure.
+
+- **Implementation Steps:**
+    1. Within the `update` closure, our code will receive `&mut SettingsContent`.
+    2. We will then call the `theme::settings::set_theme` helper function, passing it the `SettingsContent` object and the name of the new theme.
+    3. The `update_settings_file` function will then handle the process of saving the modified `SettingsContent` to the user's `settings.json` file, triggering a theme change across the application.
+
+This is the canonical way to make persistent setting changes and is the path our extension must follow to apply a new theme as part of its scheduling logic.
+
+---
+
 ## Architectural Pattern: Convergent Method for UI Events
 
 To ensure stability and maintainability, all new UI features that can be triggered by multiple sources (e.g., a button click and a keyboard shortcut) will follow the "Convergent Method" pattern. This pattern avoids subtle context errors (like `gpui: window not found`) and creates a single source of truth for business logic.
