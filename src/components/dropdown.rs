@@ -84,18 +84,18 @@ pub fn render_dropdown(
                 .top(rems(2.5))
                 .right_0()
                 .w_48()
+                .border_1()
+                .border_color(focus_color)
+                .bg(popover_bg)
+                .text_color(text_color)
+                .rounded_md()
+                .shadow_lg()
                 .child(
                     div()
                         .id(scroll_container_id)
                         .track_scroll(scroll_handle)
                         .max_h_64() // Corresponds to `max-height: 16rem;` or 256px
                         .overflow_y_scroll()
-                        .border_1()
-                        .border_color(focus_color)
-                        .bg(popover_bg)
-                        .text_color(text_color)
-                        .rounded_md()
-                        .shadow_lg()
                         .children(themes.iter().enumerate().map(|(index, theme_item)| {
                             let on_select = on_select.clone();
                             let is_disabled = disabled_indices.contains(&index);

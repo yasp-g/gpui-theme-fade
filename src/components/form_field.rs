@@ -28,6 +28,7 @@ pub fn render_form_field(
                         } else {
                             gpui::red()
                         })
+                        .rounded_md()
                         .child(child)
                 )
                 .child(
