@@ -37,17 +37,17 @@ This phase focuses on separating the core, UI-agnostic logic from the test harne
 ### 2. Core Logic Extraction
 
 - **Description:** Slim down the `AppView` "God Object" by extracting distinct areas of logic into more focused, UI-agnostic modules.
-- **Status:** [ ] Not Started
+- **Status:** [x] Completed
 - **Priority:** Medium
 - **Tasks:**
-  - [ ] **Extract Simulation Logic:**
-    - [ ] Create a new module (e.g., `src/simulation.rs`).
-    - [ ] Move the core logic from `AppView::run_simulation` into a function within this new module. This function will take the necessary parameters (themes, durations) and handle spawning the async task.
-    - [ ] `AppView::run_simulation` will now be a thin wrapper that calls this new function.
-  - [ ] **Isolate UI-Specific Logic:**
-    - [ ] Create a new helper function (e.g., in `src/ui.rs` or a new `src/components/util.rs`).
-    - [ ] This function will contain the duplicated manual scroll calculation logic from `AppView::select_next_theme` and `AppView::select_prev_theme`.
-    - [ ] Refactor the `AppView` methods to call this new, single helper function to better isolate this UI-only code.
+  - [x] **Extract Simulation Logic:**
+    - [x] Created a new module `src/simulation.rs`.
+    - [x] Moved the core simulation spawning and theme application logic from `AppView::run_simulation` into `simulation::run_simulation_core`.
+    - [x] `AppView::run_simulation` is now a thin wrapper that handles validation and calls `simulation::run_simulation_core`.
+  - [x] **Isolate UI-Specific Logic:**
+    - [x] Created a private helper method `AppView::scroll_dropdown_to_preview_index` within `src/main.rs`.
+    - [x] Moved the duplicated manual scroll calculation logic from `AppView::select_next_theme` and `AppView::select_prev_theme` into this new helper.
+    - [x] Refactored both `AppView::select_next_theme` and `AppView::select_prev_theme` to call this single helper function.
 
 ---
 

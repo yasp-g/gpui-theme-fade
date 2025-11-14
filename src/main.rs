@@ -1,27 +1,24 @@
-use chrono::{Duration as ChronoDuration, Local};
-use futures::{StreamExt, channel::mpsc};
+use chrono::Duration as ChronoDuration;
 use gpui::{
-    Action, App, AppContext, Application, AsyncApp, Context, Entity, FocusHandle, Global,
-    IntoElement, KeyBinding, Render, ScrollHandle, SharedString, Window, div, point, prelude::*,
-    px,
+    point, px, Action, App, AppContext, Application, Context, Entity, FocusHandle, Global,
+    IntoElement, KeyBinding, Render, ScrollHandle, SharedString, Window, div, prelude::*,
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
-use std::{fs, sync::Arc};
-use tracing::info;
+use std::fs;
 
-pub mod components;
+pub mod simulation;
 pub mod scheduler;
 pub mod text_input;
-pub mod theme;
 pub mod ui;
+pub mod components;
+pub mod theme;
 
-use scheduler::{ScheduleEntry, ThemeScheduler};
 use text_input::{
     Backspace, Copy, Cut, Delete, End, Home, Left, Paste, Right, SelectAll, SelectLeft,
     SelectRight, TextInput,
 };
-use theme::{InterpolatableTheme, Theme, ZedThemeFile, flatten_colors};
+use theme::{flatten_colors, InterpolatableTheme, Theme, ZedThemeFile};
 
 // --- 1. ACTIONS ---
 
@@ -204,6 +201,28 @@ impl AppView {
         cx.notify();
     }
 
+    fn scroll_dropdown_to_preview_index(window: &Window, dropdown_state: &mut DropdownState) {
+        let rem_size = window.rem_size();
+        let item_height = window.line_height() + rem_size;
+        let scroll_handle = &dropdown_state.scroll_handle;
+        let container_bounds = scroll_handle.bounds();
+        if container_bounds.size.height > px(0.0) {
+            let current_offset = scroll_handle.offset().y;
+            let item_top = item_height * dropdown_state.preview_index as f32;
+            let item_bottom = item_top + item_height;
+            let visible_top = -current_offset;
+            let visible_bottom = visible_top + container_bounds.size.height;
+
+            let mut new_offset_y = current_offset;
+            if item_top < visible_top {
+                new_offset_y = -item_top;
+            } else if item_bottom > visible_bottom {
+                new_offset_y = -(item_bottom - container_bounds.size.height);
+            }
+            scroll_handle.set_offset(point(px(0.0), new_offset_y));
+        }
+    }
+
     pub fn select_next_theme(&mut self, window: &Window, cx: &mut Context<Self>) {
         let app_state = cx.global::<AppState>();
         let theme_count = app_state.themes.len();
@@ -235,26 +254,7 @@ impl AppView {
             }
         }
 
-        // --- Manual Scroll Calculation ---
-        let rem_size = window.rem_size();
-        let item_height = window.line_height() + rem_size;
-        let scroll_handle = &dropdown_state.scroll_handle;
-        let container_bounds = scroll_handle.bounds();
-        if container_bounds.size.height > px(0.0) {
-            let current_offset = scroll_handle.offset().y;
-            let item_top = item_height * dropdown_state.preview_index as f32;
-            let item_bottom = item_top + item_height;
-            let visible_top = -current_offset;
-            let visible_bottom = visible_top + container_bounds.size.height;
-
-            let mut new_offset_y = current_offset;
-            if item_top < visible_top {
-                new_offset_y = -item_top;
-            } else if item_bottom > visible_bottom {
-                new_offset_y = -(item_bottom - container_bounds.size.height);
-            }
-            scroll_handle.set_offset(point(px(0.0), new_offset_y));
-        }
+        Self::scroll_dropdown_to_preview_index(window, dropdown_state);
 
         cx.notify();
     }
@@ -290,26 +290,7 @@ impl AppView {
             }
         }
 
-        // --- Manual Scroll Calculation ---
-        let rem_size = window.rem_size();
-        let item_height = window.line_height() + rem_size;
-        let scroll_handle = &dropdown_state.scroll_handle;
-        let container_bounds = scroll_handle.bounds();
-        if container_bounds.size.height > px(0.0) {
-            let current_offset = scroll_handle.offset().y;
-            let item_top = item_height * dropdown_state.preview_index as f32;
-            let item_bottom = item_top + item_height;
-            let visible_top = -current_offset;
-            let visible_bottom = visible_top + container_bounds.size.height;
-
-            let mut new_offset_y = current_offset;
-            if item_top < visible_top {
-                new_offset_y = -item_top;
-            } else if item_bottom > visible_bottom {
-                new_offset_y = -(item_bottom - container_bounds.size.height);
-            }
-            scroll_handle.set_offset(point(px(0.0), new_offset_y));
-        }
+        Self::scroll_dropdown_to_preview_index(window, dropdown_state);
 
         cx.notify();
     }
@@ -397,46 +378,15 @@ impl AppView {
                 )
             });
 
-            info!(
-                "Running simulation: Start='{}', End='{}'",
-                start_theme_name, end_theme_name
+            simulation::run_simulation_core(
+                cx,
+                start_theme,
+                end_theme,
+                sleep_duration,
+                fade_duration,
+                start_theme_name.into(),
+                end_theme_name.into(),
             );
-
-            cx.spawn(move |_, async_cx: &mut AsyncApp| {
-                let async_cx = async_cx.clone();
-                async move {
-                    let (theme_sender, mut theme_receiver) = mpsc::channel(32);
-
-                    let now = Local::now().time();
-                    let sim_schedule = Arc::new(vec![
-                        ScheduleEntry {
-                            time: now,
-                            theme: start_theme.clone(),
-                            fade_duration: ChronoDuration::seconds(0),
-                        },
-                        ScheduleEntry {
-                            time: now + sleep_duration + fade_duration,
-                            theme: end_theme.clone(),
-                            fade_duration,
-                        },
-                    ]);
-
-                    ThemeScheduler::spawn(theme_sender.clone(), sim_schedule, AppMode::Interactive);
-
-                    while let Some(theme) = theme_receiver.next().await {
-                        async_cx
-                            .update(|cx| {
-                                cx.update_global::<AppState, _>(|app_state, _| {
-                                    app_state.active_theme = theme.clone();
-                                });
-                            })
-                            .ok();
-                        let _ = async_cx.refresh();
-                    }
-                    info!("Simulation finished and channel closed.");
-                }
-            })
-            .detach();
         }
 
         cx.notify();
