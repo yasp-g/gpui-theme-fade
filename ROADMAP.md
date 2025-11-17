@@ -51,55 +51,6 @@ This phase focuses on separating the core, UI-agnostic logic from the test harne
 
 ---
 
-## Phase 2: Core Feature Development
-
-Once the architecture is solidified, we can begin adding new, core library functionality.
-
-### 1. Theme Integration with Zed Settings
-
-- **Description:** Integrate the theme scheduler with Zed's settings system to allow programmatic theme changes. This is the primary mechanism for the final Zed extension to function.
-- **Status:** [ ] Not Started
-- **Priority:** High
-- **Tasks:**
-  - [ ] Adapt the core scheduling logic to call `settings::update_settings_file` when a theme change is due.
-  - [ ] Inside the `update_settings_file` closure, use the `theme::settings::set_theme` helper to modify the `SettingsContent` with the new theme name.
-  - [ ] Ensure the scheduler has access to the necessary `Fs` and `AppContext` handles to perform this operation.
-
-### 2. Zed Extension Structure and Theme Access
-
-- **Description:** Define the project's structure as a Zed extension and adapt its theme loading mechanism to use Zed's internal theme registry.
-- **Status:** [ ] Not Started
-- **Priority:** High
-- **Tasks:**
-  - [ ] Investigate Zed's extension loading mechanism and define the `Cargo.toml` and entry point for our extension.
-  - [ ] Understand how Zed extensions access the available themes from Zed's `ThemeRegistry`.
-  - [ ] Adapt our theme loading mechanism to use Zed's API instead of reading theme files directly from the `assets/` directory.
-
-### 3. Configuration Persistence
-
-- **Description:** Save and load the user's settings to provide a consistent experience between sessions. This will be designed as a core feature that the Zed extension can leverage.
-- **Status:** [ ] Not Started
-- **Priority:** Low
-- **Tasks:**
-  - [ ] **Define Config Struct:** Create a new struct that can be serialized/deserialized (e.g., with `serde`) to hold settings like `start_theme_index`, `end_theme_index`, `sleep_duration`, and `fade_duration`.
-  - [ ] **Implement Save/Load Logic:** On application startup and shutdown, serialize/deserialize the config struct to a file (e.g., `config.json`).
-
----
-
-## Phase 3 (Optional): Test Harness Polish
-
-These tasks improve the standalone test application but do not contribute directly to the Zed extension. They should only be worked on if deemed necessary for improving the development experience.
-
-### 1. UX Enhancements
-
-- **Description:** Implement several small but high-impact UX improvements to make the test application feel more polished.
-- **Status:** [ ] Not Started
-- **Priority:** Very Low
-- **Tasks:**
-  - [ ] **Implement "Click-Away-to-Close" for Dropdowns.**
-  - [ ] **Add Visual Cues for Disabled Dropdown Items.**
-  - [ ] **Add Standard Window Management Keybindings (`cmd-q`, `cmd-w`, `cmd-m`).**
-
 ---
 
 ## Completed Milestones
@@ -111,3 +62,67 @@ These tasks improve the standalone test application but do not contribute direct
 - [x] **Independent Theme Selectors:** Refactored the UI to allow independent selection of start and end themes.
 - [x] **Full Keyboard Navigation:** Implemented comprehensive keyboard controls for all interactive elements.
 - [x] **Auto-Scrolling Dropdowns:** Implemented manual scroll logic to ensure the highlighted item in a dropdown is always visible.
+
+---
+
+## Phase 2: Demo Polish & UX Enhancements
+
+This phase focuses on fixing usability bugs and adding quality-of-life features to make the standalone demo a polished and shareable showcase of the core logic.
+
+### 1. Decouple "Enter" Key from Simulation
+
+-   **Description:** Remove the confusing behavior where pressing `Enter` in a text field can start the simulation. The `Enter` key should only confirm actions within the currently focused context (e.g., selecting a dropdown item).
+-   **Status:** `[ ] Not Started`
+-   **Priority:** High
+-   **Tasks:**
+    -   `[ ]` In `main.rs`, remove the `KeyBinding` that links the `Enter` key to the `Submit` action for the `TextInput` context.
+    -   `[ ]` The `Submit` action will now only be triggered by an explicit click on the "Run Simulation" button.
+
+### 2. Implement Static Gradient Previews
+
+-   **Description:** Decouple the color gradient bars from the live theme animation to make them static previews of the selected start and end themes.
+-   **Status:** `[ ] Not Started`
+-   **Priority:** High (Easy Win)
+-   **Tasks:**
+    -   `[ ]` In `src/ui.rs`, modify the `render_gradient_bar` calls.
+    -   `[ ]` The start color will be sourced from `app_state.themes[app_state.start_theme_index]`.
+    -   `[ ]` The end color will be sourced from `app_state.themes[app_state.end_theme_index]`.
+
+### 3. Implement "Click-Away-to-Close" for Dropdowns
+
+-   **Description:** Add the standard UX behavior of closing a dropdown menu when the user clicks anywhere outside of it.
+-   **Status:** `[ ] Not Started`
+-   **Priority:** Medium (Easy Win)
+-   **Tasks:**
+    -   `[ ]` In `AppView::render`, when a dropdown is open, register a one-time global mouse-down listener.
+    -   `[ ]` This listener will check if the click occurred outside the bounds of the open dropdown.
+    -   `[ ]` If the click is outside, it will dispatch an action to set the dropdown's `is_open` state to `false`.
+
+### 4. Implement Simulation State Machine
+
+-   **Description:** Introduce a formal state machine to manage the application's state during a simulation. This will provide clear, real-time UX feedback and prevent users from starting multiple simulations at once.
+-   **Status:** `[ ] Not Started`
+-   **Priority:** Medium
+-   **Tasks:**
+    -   `[ ]` **Create `src/state.rs` Module:**
+        -   `[ ]` Define a public `SimulationState` enum with variants: `Idle`, `Sleeping { end_time: DateTime<Utc> }`, and `Fading { end_time: DateTime<Utc>, from: String, to: String }`.
+        -   `[ ]` Implement a `display()` method on `SimulationState` that returns the formatted status string for the UI (e.g., "Status: Sleeping for 3.2s", "Status: Fading... (55%)").
+    -   `[ ]` **Refactor `AppView`:**
+        -   `[ ]` Add a `simulation_state: SimulationState` field to the `AppView` struct in `main.rs`.
+    -   `[ ]` **Update `ThemeScheduler`:**
+        -   `[ ]` Modify the scheduler to send `SimulationState` updates over the `mpsc` channel instead of `InterpolatableTheme`.
+    -   `[ ]` **Update UI (`ui.rs`):**
+        -   `[ ]` The UI will now render conditionally based on `AppView.simulation_state`.
+        -   `[ ]` When not `Idle`, the "Run Simulation" button and all inputs will be disabled.
+        -   `[ ]` A new `div` will be added to display the formatted status string from `simulation_state.display()`.
+
+### 5. Improve Post-Simulation UX
+
+-   **Description:** After a simulation concludes, update the UI to reflect the new state logically and prevent user confusion.
+-   **Status:** `[ ] Not Started`
+-   **Priority:** Low
+-   **Tasks:**
+    -   `[ ]` When the `ThemeScheduler` finishes, it will send a final `SimulationState::Idle` message.
+    -   `[ ]` Upon receiving this message, `AppView` will:
+        -   `[ ]` Set `app_state.start_theme_index = app_state.end_theme_index`.
+        -   `[ ]` Advance `app_state.end_theme_index` to the next theme in the list (wrapping around if necessary) to ensure the start and end themes are different.
