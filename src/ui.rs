@@ -33,6 +33,7 @@ pub fn render_interactive_ui(
         .on_action(cx.listener(AppView::on_focus_next))
         .on_action(cx.listener(AppView::on_focus_prev))
         .on_action(cx.listener(AppView::on_submit))
+        .on_action(cx.listener(AppView::on_close_dropdowns))
         .size_full()
         .bg(surface_background)
         .text_color(text_color)

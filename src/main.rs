@@ -53,6 +53,9 @@ pub struct FocusPrev;
 #[derive(Clone, PartialEq, Action)]
 pub struct Cancel;
 
+#[derive(Clone, PartialEq, Action)]
+pub struct CloseDropdowns;
+
 // New enum for application mode
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum AppMode {
@@ -160,7 +163,6 @@ impl AppView {
             self.start_dropdown_state.preview_index = cx.global::<AppState>().start_theme_index;
             self.end_dropdown_state.is_open = false;
         }
-        cx.notify();
     }
 
     pub fn toggle_end_dropdown(&mut self, cx: &mut Context<Self>) {
@@ -169,10 +171,10 @@ impl AppView {
             self.end_dropdown_state.preview_index = cx.global::<AppState>().end_theme_index;
             self.start_dropdown_state.is_open = false;
         }
-        cx.notify();
     }
 
     pub fn close_dropdowns(&mut self, cx: &mut Context<Self>) {
+        println!("close_dropdowns called");
         self.start_dropdown_state.is_open = false;
         self.end_dropdown_state.is_open = false;
         cx.notify();
@@ -301,6 +303,7 @@ impl AppView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        cx.stop_propagation();
         self.select_next_theme(window, cx);
     }
 
@@ -310,6 +313,7 @@ impl AppView {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        cx.stop_propagation();
         self.select_prev_theme(window, cx);
     }
 
@@ -326,11 +330,18 @@ impl AppView {
     }
 
     fn on_confirm_theme(&mut self, _: &ConfirmTheme, window: &mut Window, cx: &mut Context<Self>) {
+        cx.stop_propagation();
         self.confirm_theme(window, cx);
         cx.notify();
     }
 
     fn on_cancel(&mut self, _: &Cancel, _window: &mut Window, cx: &mut Context<Self>) {
+        cx.stop_propagation();
+        self.close_dropdowns(cx);
+    }
+
+    fn on_close_dropdowns(&mut self, _: &CloseDropdowns, _window: &mut Window, cx: &mut Context<Self>) {
+        println!("on_close_dropdowns called");
         self.close_dropdowns(cx);
     }
     fn run_simulation(&mut self, cx: &mut Context<Self>) {
@@ -399,6 +410,7 @@ impl AppView {
 
 impl Render for AppView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        println!("AppView::render called");
         let app_state = cx.global::<AppState>().clone();
 
         // Logic to close dropdowns if they lose focus

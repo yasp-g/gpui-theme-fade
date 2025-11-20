@@ -79,48 +79,62 @@ pub fn render_dropdown(
         .child(render_popover(
             is_open,
             div()
-                .occlude() // Add .occlude() here
-                .absolute()
-                .top(rems(2.5))
-                .right_0()
-                .w_48()
-                .border_1()
-                .border_color(focus_color)
-                .bg(popover_bg)
-                .text_color(text_color)
-                .rounded_md()
-                .shadow_lg()
-                .child(
+                .size_full()
+                .children([
                     div()
-                        .id(scroll_container_id)
-                        .track_scroll(scroll_handle)
-                        .max_h_64() // Corresponds to `max-height: 16rem;` or 256px
-                        .overflow_y_scroll()
-                        .children(themes.iter().enumerate().map(|(index, theme_item)| {
-                            let on_select = on_select.clone();
-                            let is_disabled = disabled_indices.contains(&index);
-
+                        .id("dropdown-backdrop")
+                        .absolute()
+                        .size_full()
+                        .on_click(|_, _, cx| {
+                            cx.dispatch_action(&crate::CloseDropdowns);
+                        })
+                        .into_any_element(),
+                    div()
+                        .id("dropdown-content")
+                        .occlude()
+                        .absolute()
+                        .right_0()
+                        .w_48()
+                        .border_1()
+                        .border_color(focus_color)
+                        .bg(popover_bg)
+                        .text_color(text_color)
+                        .rounded_md()
+                        .shadow_lg()
+                        .on_click(|_, _, app_context| app_context.stop_propagation())
+                        .child(
                             div()
-                                .id((item_id_prefix, index))
-                                .p_2()
-                                .when(!is_disabled, |s| {
-                                    s.hover(|style| style.bg(element_hover)).on_click(
-                                        cx.listener(move |view, ev, win, cx| {
-                                            on_select(index, view, ev, win, cx);
-                                        }),
-                                    )
-                                })
-                                .when(index == preview_index, |style| {
-                                    style.bg(element_selected)
-                                })
-                                .when(is_disabled, |s| s.text_color(text_disabled_color))
-                                .child(theme_item.name.clone())
-                        })),
-                )
-                .child(render_scrollbar(
-                    (scroll_container_id, 1 as usize),
-                    scroll_handle,
-                    theme,
-                )),
+                                .id(scroll_container_id)
+                                .track_scroll(scroll_handle)
+                                .max_h_64() // Corresponds to `max-height: 16rem;` or 256px
+                                .overflow_y_scroll()
+                                .children(themes.iter().enumerate().map(|(index, theme_item)| {
+                                    let on_select = on_select.clone();
+                                    let is_disabled = disabled_indices.contains(&index);
+
+                                    div()
+                                        .id((item_id_prefix, index))
+                                        .p_2()
+                                        .when(!is_disabled, |s| {
+                                            s.hover(|style| style.bg(element_hover)).on_click(
+                                                cx.listener(move |view, ev, win, cx| {
+                                                    on_select(index, view, ev, win, cx);
+                                                }),
+                                            )
+                                        })
+                                        .when(index == preview_index, |style| {
+                                            style.bg(element_selected)
+                                        })
+                                        .when(is_disabled, |s| s.text_color(text_disabled_color))
+                                        .child(theme_item.name.clone())
+                                })),
+                        )
+                        .child(render_scrollbar(
+                            (scroll_container_id, 1 as usize),
+                            scroll_handle,
+                            theme,
+                        ))
+                        .into_any_element(),
+                ]),
         ))
 }
