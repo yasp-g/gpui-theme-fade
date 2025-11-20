@@ -49,6 +49,7 @@ To ensure clarity and alignment, the `ROADMAP.md` file will serve as the single 
 - **Planning First:** Before implementing any new feature, bug fix, or significant refactoring, a detailed plan must be added to `ROADMAP.md`. This plan should follow the established format, breaking the work down into clear, actionable tasks.
 - **Executing the Plan:** All implementation work should directly follow the plan laid out in the roadmap.
 - **Keeping it Current:** As tasks are completed, their corresponding checkboxes (`- [ ]`) must be marked as done (`- [x]`). The "Last Updated" date should also be updated periodically.
+- **Verify Before Documenting:** All changes to documentation, especially updating task statuses in `ROADMAP.md`, must only occur *after* the corresponding code changes have been verified by running the application or tests and confirming the fix/feature works as expected.
 
 This process ensures that we always have a clear, up-to-date view of the project's status and direction.
 
