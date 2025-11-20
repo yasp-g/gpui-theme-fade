@@ -78,15 +78,28 @@ This phase focuses on fixing usability bugs and adding quality-of-life features 
     -   `[ ]` In `main.rs`, remove the `KeyBinding` that links the `Enter` key to the `Submit` action for the `TextInput` context.
     -   `[ ]` The `Submit` action will now only be triggered by an explicit click on the "Run Simulation" button.
 
-### 2. Implement Static Gradient Previews
+### 2. Fix Enter Key Handling in Dropdowns
+
+-   **Description:** Enter key events are not handled correctly by the dropdown components.
+    - **Flashing Bug:** When a closed dropdown is focused and Enter is hit, the menu flashes open and immediately closes. When the menu is already opened and Enter is hit, the menu flashes closed and immediately reopens, but the new selection (if one has been navigated to with the arrow keys) is recorded.
+    - **Focus Bug:** After closing a dropdown with Enter, pressing Enter again does not re-open it. After opening a dropdown with Enter, pressing Enter again does not close it unless another interaction (like arrow keys or mouse hover) occurs first.
+-   **Status:** `[ ] Not Started`
+-   **Priority:** High
+-   **Tasks:**
+    -   `[ ]` Investigate the interaction between `on_confirm_theme` and dropdown state.
+    -   `[ ]` Ensure `Enter` key press consistently opens/closes the dropdown without flashing.
+    -   `[ ]` Ensure focus is correctly managed after opening/closing with Enter.
+    -   `[ ]` Verify that selection is correctly applied when `Enter` is used to confirm.
+
+### 3. Implement Static Gradient Previews
 
 -   **Description:** Decouple the color gradient bars from the live theme animation to make them static previews of the selected start and end themes.
--   **Status:** `[ ] Not Started`
+-   **Status:** `[x] Completed`
 -   **Priority:** High (Easy Win)
 -   **Tasks:**
-    -   `[ ]` In `src/ui.rs`, modify the `render_gradient_bar` calls.
-    -   `[ ]` The start color will be sourced from `app_state.themes[app_state.start_theme_index]`.
-    -   `[ ]` The end color will be sourced from `app_state.themes[app_state.end_theme_index]`.
+    -   `[x]` In `src/ui.rs`, modify the `render_gradient_bar` calls.
+    -   `[x]` The start color will be sourced from `app_state.themes[app_state.start_theme_index]`.
+    -   `[x]` The end color will be sourced from `app_state.themes[app_state.end_theme_index]`.
 
 ### 3. Implement "Click-Away-to-Close" for Dropdowns
 
