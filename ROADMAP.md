@@ -1,6 +1,6 @@
 # Project Roadmap: GPUI Theme Scheduler
 
-**Last Updated:** 2025-11-12
+**Last Updated:** 2025-11-20
 
 ## Project Overview
 
@@ -71,71 +71,95 @@ This phase focuses on fixing usability bugs and adding quality-of-life features 
 
 ### 1. Decouple "Enter" Key from Simulation
 
--   **Description:** Remove the confusing behavior where pressing `Enter` in a text field can start the simulation. The `Enter` key should only confirm actions within the currently focused context (e.g., selecting a dropdown item).
--   **Status:** `[ ] Not Started`
--   **Priority:** High
--   **Tasks:**
-    -   `[ ]` In `main.rs`, remove the `KeyBinding` that links the `Enter` key to the `Submit` action for the `TextInput` context.
-    -   `[ ]` The `Submit` action will now only be triggered by an explicit click on the "Run Simulation" button.
+- **Description:** Remove the confusing behavior where pressing `Enter` in a text field can start the simulation. The `Enter` key should only confirm actions within the currently focused context (e.g., selecting a dropdown item).
+- **Status:** `[ ] Not Started`
+- **Priority:** High
+- **Tasks:**
+  - [ ] In `main.rs`, remove the `KeyBinding` that links the `Enter` key to the `Submit` action for the `TextInput` context.
+  - [ ] The `Submit` action will now only be triggered by an explicit click on the "Run Simulation" button.
 
 ### 2. Fix Enter Key Handling in Dropdowns
 
--   **Description:** Enter key events are not handled correctly by the dropdown components.
-    - **Flashing Bug:** When a closed dropdown is focused and Enter is hit, the menu flashes open and immediately closes. When the menu is already opened and Enter is hit, the menu flashes closed and immediately reopens, but the new selection (if one has been navigated to with the arrow keys) is recorded.
-    - **Focus Bug:** After closing a dropdown with Enter, pressing Enter again does not re-open it. After opening a dropdown with Enter, pressing Enter again does not close it unless another interaction (like arrow keys or mouse hover) occurs first.
--   **Status:** `[ ] Not Started`
--   **Priority:** High
--   **Tasks:**
-    -   `[ ]` Investigate the interaction between `on_confirm_theme` and dropdown state.
-    -   `[ ]` Ensure `Enter` key press consistently opens/closes the dropdown without flashing.
-    -   `[ ]` Ensure focus is correctly managed after opening/closing with Enter.
-    -   `[ ]` Verify that selection is correctly applied when `Enter` is used to confirm.
-
-### 3. Implement Static Gradient Previews
-
--   **Description:** Decouple the color gradient bars from the live theme animation to make them static previews of the selected start and end themes.
--   **Status:** `[x] Completed`
--   **Priority:** High (Easy Win)
--   **Tasks:**
-    -   `[x]` In `src/ui.rs`, modify the `render_gradient_bar` calls.
-    -   `[x]` The start color will be sourced from `app_state.themes[app_state.start_theme_index]`.
-    -   `[x]` The end color will be sourced from `app_state.themes[app_state.end_theme_index]`.
+- **Description:** Enter key events are not handled correctly by the dropdown components.
+- **Flashing Bug:** When a closed dropdown is focused and Enter is hit, the menu flashes open and immediately closes. When the menu is already opened and Enter is hit, the menu flashes closed and immediately reopens, but the new selection (if one has been navigated to with the arrow keys) is recorded.
+- **Focus Bug:** After closing a dropdown with Enter, pressing Enter again does not re-open it. After opening a dropdown with Enter, pressing Enter again does not close it unless another interaction (like arrow keys or mouse hover) occurs first.
+- **Status:** `[x] Completed`
+- **Priority:** High
+- **Tasks:**
+  - `[x]` Investigate the interaction between `on_confirm_theme` and dropdown state.
+  - `[x]` Ensure `Enter` key press consistently opens/closes the dropdown without flashing.
+  - `[x]` Ensure focus is correctly managed after opening/closing with Enter.
+  - `[x]` Verify that selection is correctly applied when `Enter` is used to confirm.
 
 ### 3. Implement "Click-Away-to-Close" for Dropdowns
 
--   **Description:** Add the standard UX behavior of closing a dropdown menu when the user clicks anywhere outside of it.
--   **Status:** `[ ] Not Started`
--   **Priority:** Medium (Easy Win)
--   **Tasks:**
-    -   `[ ]` In `AppView::render`, when a dropdown is open, register a one-time global mouse-down listener.
-    -   `[ ]` This listener will check if the click occurred outside the bounds of the open dropdown.
-    -   `[ ]` If the click is outside, it will dispatch an action to set the dropdown's `is_open` state to `false`.
+- **Description:** Add the standard UX behavior of closing a dropdown menu when the user clicks anywhere outside of it.
+- **Status:** `[x] Completed`
+- **Priority:** Medium (Easy Win)
+- **Tasks:**
+  - `[x]` In `AppView::render`, when a dropdown is open, register a one-time global mouse-down listener.
+  - `[x]` This listener will check if the click occurred outside the bounds of the open dropdown.
+  - `[x]` If the click is outside, it will dispatch an action to set the dropdown's `is_open` state to `false`.
 
-### 4. Implement Simulation State Machine
+### 4. Implement Static Gradient Previews
 
--   **Description:** Introduce a formal state machine to manage the application's state during a simulation. This will provide clear, real-time UX feedback and prevent users from starting multiple simulations at once.
--   **Status:** `[ ] Not Started`
--   **Priority:** Medium
--   **Tasks:**
-    -   `[ ]` **Create `src/state.rs` Module:**
-        -   `[ ]` Define a public `SimulationState` enum with variants: `Idle`, `Sleeping { end_time: DateTime<Utc> }`, and `Fading { end_time: DateTime<Utc>, from: String, to: String }`.
-        -   `[ ]` Implement a `display()` method on `SimulationState` that returns the formatted status string for the UI (e.g., "Status: Sleeping for 3.2s", "Status: Fading... (55%)").
-    -   `[ ]` **Refactor `AppView`:**
-        -   `[ ]` Add a `simulation_state: SimulationState` field to the `AppView` struct in `main.rs`.
-    -   `[ ]` **Update `ThemeScheduler`:**
-        -   `[ ]` Modify the scheduler to send `SimulationState` updates over the `mpsc` channel instead of `InterpolatableTheme`.
-    -   `[ ]` **Update UI (`ui.rs`):**
-        -   `[ ]` The UI will now render conditionally based on `AppView.simulation_state`.
-        -   `[ ]` When not `Idle`, the "Run Simulation" button and all inputs will be disabled.
-        -   `[ ]` A new `div` will be added to display the formatted status string from `simulation_state.display()`.
+- **Description:** Decouple the color gradient bars from the live theme animation to make them static previews of the selected start and end themes.
+- **Status:** `[x] Completed`
+- **Priority:** High (Easy Win)
+- **Tasks:**
+  - [x] In `src/ui.rs`, modify the `render_gradient_bar` calls.
+  - [x] The start color will be sourced from `app_state.themes[app_state.start_theme_index]`.
+  - [x] The end color will be sourced from `app_state.themes[app_state.end_theme_index]`.
 
-### 5. Improve Post-Simulation UX
+### 5. Implement Simulation State Machine
 
--   **Description:** After a simulation concludes, update the UI to reflect the new state logically and prevent user confusion.
--   **Status:** `[ ] Not Started`
--   **Priority:** Low
--   **Tasks:**
-    -   `[ ]` When the `ThemeScheduler` finishes, it will send a final `SimulationState::Idle` message.
-    -   `[ ]` Upon receiving this message, `AppView` will:
-        -   `[ ]` Set `app_state.start_theme_index = app_state.end_theme_index`.
-        -   `[ ]` Advance `app_state.end_theme_index` to the next theme in the list (wrapping around if necessary) to ensure the start and end themes are different.
+- **Description:** Introduce a formal state machine to manage the application's state during a simulation. This will provide clear, real-time UX feedback and prevent users from starting multiple simulations at once.
+- **Status:** `[ ] Not Started`
+- **Priority:** Medium
+- **Tasks:**
+  - [ ] **Create `src/state.rs` Module:**
+    - [ ] Define a public `SimulationState` enum with variants: `Idle`, `Sleeping { end_time: DateTime<Utc> }`, and `Fading { end_time: DateTime<Utc>, from: String, to: String }`.
+    - [ ] Implement a `display()` method on `SimulationState` that returns the formatted status string for the UI (e.g., "Status: Sleeping for 3.2s", "Status: Fading... (55%)").
+  - [ ] **Refactor `AppView`:**
+    - [ ] Add a `simulation_state: SimulationState` field to the `AppView` struct in `main.rs`.
+  - [ ] **Update `ThemeScheduler`:**
+    - [ ] Modify the scheduler to send `SimulationState` updates over the `mpsc` channel instead of `InterpolatableTheme`.
+  - [ ] **Update UI (`ui.rs`):**
+    - [ ] The UI will now render conditionally based on `AppView.simulation_state`.
+    - [ ] When not `Idle`, the "Run Simulation" button and all inputs will be disabled.
+    - [ ] A new `div` will be added to display the formatted status string from `simulation_state.display()`.
+
+### 6. Improve Post-Simulation UX
+
+- **Description:** After a simulation concludes, update the UI to reflect the new state logically and prevent user confusion.
+- **Status:** `[ ] Not Started`
+- **Priority:** Low
+- **Tasks:**
+  - [ ] When the `ThemeScheduler` finishes, it will send a final `SimulationState::Idle` message.
+  - [ ] Upon receiving this message, `AppView` will:
+    - [ ] Set `app_state.start_theme_index = app_state.end_theme_index`.
+    - [ ] Advance `app_state.end_theme_index` to the next theme in the list (wrapping around if necessary) to ensure the start and end themes are different.
+
+---
+
+## Bugs / Missing Features Noticed During Development
+
+### 1. Focus Navigation Initiation
+
+- `tab` and `shift + tab` do nothing until a item is focused with the mouse
+- If nothing is focused, `tab` should focus the top component, `shift + tab` should focus the last element
+
+### 2. Dropdown Enter Bug
+
+- After closing a dropdown menu with Enter, immediately pressing Enter does nothing (i.e. it does not open the dropdown again)
+- After opening a dropdown menu with Enter, immediately pressing Enter does nothing (i.e. it does not close the dropdown (with the same selection))
+
+### 3. `cmd + W` Does nothing
+
+- Common keybindings like `cmd + W` and `cmd + M` are missing
+- Is there a common set that are standard and simple to include?
+
+### 4. Multi-Click Text Control
+
+- We should implement the standard UX for double and triple clicking text for the textinputs
+- If text in a textinput is highlighted, clicking away (even to another textinput) doesn't un-do the highlight (this feels like incorrect UX, right?)
