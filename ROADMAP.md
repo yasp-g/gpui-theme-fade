@@ -72,12 +72,12 @@ This phase focuses on fixing usability bugs and adding quality-of-life features 
 ### 1. Implement Standard Form Submission UX
 
 - **Description:** Adopt a standard form submission model where `Cmd+Enter` submits globally, and `Enter` only submits when the "Run Simulation" button is focused. This prevents accidental submissions while typing in text fields.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** High
 - **Tasks:**
-  - [ ] Replace the global `Enter` -> `Submit` binding with `Cmd+Enter` -> `Submit` in `main.rs`.
-  - [ ] Assign a specific key context (e.g., "RunButton") to the "Run Simulation" button in `ui.rs`.
-  - [ ] Bind `Enter` -> `Submit` specifically for the "RunButton" context in `main.rs`.
+  - `[x]` Replace the global `Enter` -> `Submit` binding with `Cmd+Enter` -> `Submit` in `main.rs`.
+  - `[x]` Assign a specific key context (e.g., "RunButton") to the "Run Simulation" button in `ui.rs`.
+  - `[x]` Bind `Enter` -> `Submit` specifically for the "RunButton" context in `main.rs`.
 
 ### 2. Fix Enter Key Handling in Dropdowns
 
