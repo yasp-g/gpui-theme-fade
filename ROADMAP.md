@@ -130,11 +130,11 @@ This phase focuses on fixing usability bugs, standardizing application behavior,
 ### 7. Standard Application Behaviors
 
 - **Description:** Implement standard OS-level application behaviors and identity.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** Medium
 - **Tasks:**
-  - [ ] **Window Controls:** Add standard key bindings for `Cmd+W` (Close Window) and `Cmd+Q` (Quit).
-  - [ ] **App Bundle ID:** Configure the application to have a valid Bundle ID (e.g., `dev.zed.gpui-theme-fade`) so it is correctly identified by window managers like Aerospace.
+  - [x] **Window Controls:** Add standard key bindings for `Cmd+W` (Close Window) and `Cmd+Q` (Quit).
+  - [x] **App Bundle ID:** Investigated. Setting a custom Bundle ID requires a full App Bundle structure (Info.plist), which is outside the scope of `cargo run`. Skipped for now.
 
 ### 8. Text Input Polish
 
@@ -180,3 +180,9 @@ This phase focuses on the core business logic of the theme scheduler, introducin
   - [ ] Upon receiving this message, `AppView` will:
     - [ ] Set `app_state.start_theme_index = app_state.end_theme_index`.
     - [ ] Advance `app_state.end_theme_index` to the next theme in the list (wrapping around if necessary) to ensure the start and end themes are different.
+
+---
+
+## Known Issues
+
+- **Background Scheduler Race Condition:** When closing the window with `Cmd+W`, the application process may persist, and the console may log `ERROR gpui: window not found`. This occurs because the background scheduler thread outlives the UI window and attempts to dispatch updates to a closed window. `Cmd+Q` avoids this by terminating the process immediately.
