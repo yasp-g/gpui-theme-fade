@@ -139,11 +139,11 @@ This phase focuses on fixing usability bugs, standardizing application behavior,
 ### 8. Text Input Polish
 
 - **Description:** Implement standard text selection behaviors to match user expectations.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** Low
 - **Tasks:**
-  - [ ] **Double-Click:** Select the word under the cursor.
-  - [ ] **Triple-Click:** Select the entire line/content.
+  - [x] **Double-Click:** Select the word under the cursor.
+  - [x] **Triple-Click:** Select the entire line/content.
   - [ ] **Blur Behavior:** Ensure selection visibility behaves correctly when the input loses focus (optional, but nice to have).
 
 ---
