@@ -112,7 +112,17 @@ This phase focuses on fixing usability bugs and adding quality-of-life features 
   - [x] The start color will be sourced from `app_state.themes[app_state.start_theme_index]`.
   - [x] The end color will be sourced from `app_state.themes[app_state.end_theme_index]`.
 
-### 5. Implement Simulation State Machine
+### 5. Robust Focus Management
+
+- **Description:** Establish a clear focus hierarchy to ensure keyboard navigation works immediately upon launch and that clicking the background correctly resets focus to a neutral state.
+- **Status:** `[ ] Not Started`
+- **Priority:** High
+- **Tasks:**
+  - [ ] Implement a "Root Focus Handle" for the `InteractiveUI` container.
+  - [ ] Request focus for the root handle on application startup to enable immediate Tab navigation.
+  - [ ] Ensure clicking the background focuses the root handle, releasing focus from specific inputs.
+
+### 6. Implement Simulation State Machine
 
 - **Description:** Introduce a formal state machine to manage the application's state during a simulation. This will provide clear, real-time UX feedback and prevent users from starting multiple simulations at once.
 - **Status:** `[ ] Not Started`
@@ -130,7 +140,7 @@ This phase focuses on fixing usability bugs and adding quality-of-life features 
     - [ ] When not `Idle`, the "Run Simulation" button and all inputs will be disabled.
     - [ ] A new `div` will be added to display the formatted status string from `simulation_state.display()`.
 
-### 6. Improve Post-Simulation UX
+### 7. Improve Post-Simulation UX
 
 - **Description:** After a simulation concludes, update the UI to reflect the new state logically and prevent user confusion.
 - **Status:** `[ ] Not Started`
@@ -144,11 +154,6 @@ This phase focuses on fixing usability bugs and adding quality-of-life features 
 ---
 
 ## Bugs / Missing Features Noticed During Development
-
-### 1. Focus Navigation Initiation
-
-- `tab` and `shift + tab` do nothing until a item is focused with the mouse
-- If nothing is focused, `tab` should focus the top component, `shift + tab` should focus the last element
 
 ### 2. Dropdown Enter Bug
 
@@ -164,10 +169,6 @@ This phase focuses on fixing usability bugs and adding quality-of-life features 
 
 - We should implement the standard UX for double and triple clicking text for the textinputs
 - If text in a textinput is highlighted, clicking away (even to another textinput) doesn't un-do the highlight (this feels like incorrect UX, right?)
-
-### 5. Click-Away does not Release Focus
-
-- When a component is focused, should this focus be _released_ when clicked away? What is the standard UX for this workflow?
 
 ### 6. App ID
 
