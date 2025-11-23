@@ -166,7 +166,7 @@ impl AppView {
         self.run_simulation(cx);
     }
 
-    pub fn focus_root(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+    pub fn focus_root(&mut self, window: &mut Window, _cx: &mut Context<Self>) {
         window.focus(&self.root_focus_handle);
     }
 

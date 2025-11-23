@@ -5,7 +5,6 @@ use crate::{
 };
 use gpui::{
     ClickEvent, Context, FocusHandle, IntoElement, ScrollHandle, Window, div, hsla, prelude::*,
-    rems,
 };
 
 pub fn render_dropdown(
