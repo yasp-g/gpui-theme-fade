@@ -1,6 +1,6 @@
 # Project Roadmap: GPUI Theme Scheduler
 
-**Last Updated:** 2025-11-20
+**Last Updated:** 2025-11-23
 
 ## Project Overview
 
@@ -51,8 +51,6 @@ This phase focuses on separating the core, UI-agnostic logic from the test harne
 
 ---
 
----
-
 ## Completed Milestones
 
 - [x] **Smooth Theme Animation:** Implemented a fix to ensure the theme transition animation renders smoothly by forcing UI redraws from the background thread.
@@ -67,7 +65,7 @@ This phase focuses on separating the core, UI-agnostic logic from the test harne
 
 ## Phase 2: Demo Polish & UX Enhancements
 
-This phase focuses on fixing usability bugs and adding quality-of-life features to make the standalone demo a polished and shareable showcase of the core logic.
+This phase focuses on fixing usability bugs, standardizing application behavior, and adding quality-of-life features to make the standalone demo a polished and shareable showcase.
 
 ### 1. Implement Standard Form Submission UX
 
@@ -82,8 +80,6 @@ This phase focuses on fixing usability bugs and adding quality-of-life features 
 ### 2. Fix Enter Key Handling in Dropdowns
 
 - **Description:** Enter key events are not handled correctly by the dropdown components.
-- **Flashing Bug:** When a closed dropdown is focused and Enter is hit, the menu flashes open and immediately closes. When the menu is already opened and Enter is hit, the menu flashes closed and immediately reopens, but the new selection (if one has been navigated to with the arrow keys) is recorded.
-- **Focus Bug:** After closing a dropdown with Enter, pressing Enter again does not re-open it. After opening a dropdown with Enter, pressing Enter again does not close it unless another interaction (like arrow keys or mouse hover) occurs first.
 - **Status:** `[x] Completed`
 - **Priority:** High
 - **Tasks:**
@@ -122,7 +118,41 @@ This phase focuses on fixing usability bugs and adding quality-of-life features 
   - `[x]` Request focus for the root handle on application startup to enable immediate Tab navigation.
   - `[x]` Ensure clicking the background focuses the root handle, releasing focus from specific inputs.
 
-### 6. Implement Simulation State Machine
+### 6. Fix Dropdown Toggle Logic (The "Enter" Bug)
+
+- **Description:** Fix persistent issues where the `Enter` key fails to toggle the dropdown open/closed reliably after certain interactions (e.g., after closing it, immediate re-opening fails).
+- **Status:** `[ ] Not Started`
+- **Priority:** High
+- **Tasks:**
+  - [ ] Investigate the `on_confirm_theme` vs. `on_toggle` logic.
+  - [ ] Ensure consistent state transitions regardless of whether the action was triggered via Mouse Click or Enter Key.
+
+### 7. Standard Application Behaviors
+
+- **Description:** Implement standard OS-level application behaviors and identity.
+- **Status:** `[ ] Not Started`
+- **Priority:** Medium
+- **Tasks:**
+  - [ ] **Window Controls:** Add standard key bindings for `Cmd+W` (Close Window) and `Cmd+Q` (Quit).
+  - [ ] **App Bundle ID:** Configure the application to have a valid Bundle ID (e.g., `dev.zed.gpui-theme-fade`) so it is correctly identified by window managers like Aerospace.
+
+### 8. Text Input Polish
+
+- **Description:** Implement standard text selection behaviors to match user expectations.
+- **Status:** `[ ] Not Started`
+- **Priority:** Low
+- **Tasks:**
+  - [ ] **Double-Click:** Select the word under the cursor.
+  - [ ] **Triple-Click:** Select the entire line/content.
+  - [ ] **Blur Behavior:** Ensure selection visibility behaves correctly when the input loses focus (optional, but nice to have).
+
+---
+
+## Phase 3: Simulation Logic & State Management
+
+This phase focuses on the core business logic of the theme scheduler, introducing a formal state machine and improving the feedback loop.
+
+### 1. Implement Simulation State Machine
 
 - **Description:** Introduce a formal state machine to manage the application's state during a simulation. This will provide clear, real-time UX feedback and prevent users from starting multiple simulations at once.
 - **Status:** `[ ] Not Started`
@@ -140,7 +170,7 @@ This phase focuses on fixing usability bugs and adding quality-of-life features 
     - [ ] When not `Idle`, the "Run Simulation" button and all inputs will be disabled.
     - [ ] A new `div` will be added to display the formatted status string from `simulation_state.display()`.
 
-### 7. Improve Post-Simulation UX
+### 2. Improve Post-Simulation UX
 
 - **Description:** After a simulation concludes, update the UI to reflect the new state logically and prevent user confusion.
 - **Status:** `[ ] Not Started`
@@ -150,29 +180,3 @@ This phase focuses on fixing usability bugs and adding quality-of-life features 
   - [ ] Upon receiving this message, `AppView` will:
     - [ ] Set `app_state.start_theme_index = app_state.end_theme_index`.
     - [ ] Advance `app_state.end_theme_index` to the next theme in the list (wrapping around if necessary) to ensure the start and end themes are different.
-
----
-
-## Bugs / Missing Features Noticed During Development
-
-### 2. Dropdown Enter Bug
-
-- After closing a dropdown menu with Enter, immediately pressing Enter does nothing (i.e. it does not open the dropdown again)
-- After opening a dropdown menu with Enter, immediately pressing Enter does nothing (i.e. it does not close the dropdown (with the same selection))
-
-### 3. `cmd + W` Does nothing
-
-- Common keybindings like `cmd + W` and `cmd + M` are missing
-- Is there a common set that are standard and simple to include?
-
-### 4. Multi-Click Text Control
-
-- We should implement the standard UX for double and triple clicking text for the textinputs
-- If text in a textinput is highlighted, clicking away (even to another textinput) doesn't un-do the highlight (this feels like incorrect UX, right?)
-
-### 6. App ID
-
-- How can we set an app ID for the interactive UI?
-- I became aware of this issue because I use aerospace as a window manager on my mac. When I command `aerospace list-apps`, this is returned for the app: `62369 | NULL-APP-BUNDLE-ID               | gpui-test`.
-  - What exactly is `NULL-APP-BUNDLE-ID`?
-  - We should set this to something meaningful, no?
