@@ -104,7 +104,14 @@ impl TextInput {
         window.focus(&self.focus_handle);
         self.is_selecting = true;
 
-        if event.modifiers.shift {
+        if event.click_count == 2 {
+            self.select_word(self.index_for_mouse_position(event.position), cx);
+            self.is_selecting = false;
+        } else if event.click_count == 3 {
+            self.selected_range = 0..self.content.len();
+            cx.notify();
+            self.is_selecting = false;
+        } else if event.modifiers.shift {
             self.select_to(self.index_for_mouse_position(event.position), cx);
         } else {
             self.move_to(self.index_for_mouse_position(event.position), cx)
@@ -155,6 +162,28 @@ impl TextInput {
     fn move_to(&mut self, offset: usize, cx: &mut Context<Self>) {
         self.selected_range = offset..offset;
         cx.notify()
+    }
+
+    fn select_word(&mut self, offset: usize, cx: &mut Context<Self>) {
+        let mut start = 0;
+        let mut end = self.content.len();
+
+        for (w_start, w_str) in self.content.split_word_bound_indices() {
+            let w_end = w_start + w_str.len();
+            if offset >= w_start && offset < w_end {
+                start = w_start;
+                end = w_end;
+                break;
+            }
+            if offset == w_end && w_end == self.content.len() {
+                start = w_start;
+                end = w_end;
+                break;
+            }
+        }
+
+        self.selected_range = start..end;
+        cx.notify();
     }
 
     fn cursor_offset(&self) -> usize {
