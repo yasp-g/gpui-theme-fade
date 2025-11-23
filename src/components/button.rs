@@ -4,6 +4,7 @@ use crate::AppView;
 pub fn render_button(
     id: &'static str,
     label: impl IntoElement,
+    key_context: Option<&'static str>,
     focus_handle: &FocusHandle,
     on_click_callback: impl Fn(&mut AppView, &gpui::ClickEvent, &mut gpui::Window, &mut Context<AppView>) + 'static + Clone,
     cx: &mut Context<AppView>,
@@ -17,6 +18,7 @@ pub fn render_button(
 
     div()
         .id(id)
+        .when(key_context.is_some(), |this| this.key_context(key_context.unwrap()))
         .track_focus(focus_handle)
         .focus(|s| s.border_color(focus_color))
         .p_2()

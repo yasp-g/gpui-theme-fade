@@ -518,8 +518,9 @@ fn main() {
             KeyBinding::new("up", SelectPrevTheme, Some("ThemeSelector")),
             KeyBinding::new("enter", ConfirmTheme, Some("ThemeSelector")),
             KeyBinding::new("escape", Cancel, Some("ThemeSelector")),
-            KeyBinding::new("enter", Submit, Some("InteractiveUI")),
-            KeyBinding::new("enter", Submit, Some("TextInput")),
+            KeyBinding::new("cmd-enter", Submit, Some("InteractiveUI")),
+            KeyBinding::new("enter", Submit, Some("RunButton")),
+
         ]);
 
         // --- Initialize AppState ---

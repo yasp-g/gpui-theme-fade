@@ -116,6 +116,7 @@ pub fn render_interactive_ui(
                         render_button(
                             "run-simulation-button",
                             "Run Simulation",
+                            Some("RunButton"),
                             &view.run_simulation_focus_handle,
                             |view, _, _, cx| {
                                 view.run_simulation(cx);
