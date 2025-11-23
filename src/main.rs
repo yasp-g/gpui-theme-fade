@@ -56,6 +56,12 @@ pub struct Cancel;
 #[derive(Clone, PartialEq, Action)]
 pub struct CloseDropdowns;
 
+#[derive(Clone, PartialEq, Action)]
+pub struct Quit;
+
+#[derive(Clone, PartialEq, Action)]
+pub struct CloseWindow;
+
 // New enum for application mode
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum AppMode {
@@ -342,6 +348,10 @@ impl AppView {
         cx.notify();
     }
 
+    fn on_close_window(&mut self, _: &CloseWindow, window: &mut Window, _cx: &mut Context<Self>) {
+        window.remove_window();
+    }
+
     fn on_cancel(&mut self, _: &Cancel, _window: &mut Window, cx: &mut Context<Self>) {
         cx.stop_propagation();
         self.close_dropdowns(cx);
@@ -438,7 +448,7 @@ impl Render for AppView {
             self.close_dropdowns(cx);
         }
 
-        match app_state.app_mode {
+        let content = match app_state.app_mode {
             AppMode::Scheduler => div()
                 .flex()
                 .size_full()
@@ -464,7 +474,12 @@ impl Render for AppView {
                 ))
                 .into_any_element(),
             AppMode::Interactive => self.render_interactive_ui(cx).into_any_element(),
-        }
+        };
+
+        div()
+            .size_full()
+            .on_action(cx.listener(Self::on_close_window))
+            .child(content)
     }
 }
 
@@ -527,8 +542,11 @@ fn main() {
             KeyBinding::new("escape", Cancel, Some("ThemeSelector")),
             KeyBinding::new("cmd-enter", Submit, Some("InteractiveUI")),
             KeyBinding::new("enter", Submit, Some("RunButton")),
-
+            KeyBinding::new("cmd-q", Quit, None),
+            KeyBinding::new("cmd-w", CloseWindow, None),
         ]);
+
+        cx.on_action(|_: &Quit, cx| cx.quit());
 
         // --- Initialize AppState ---
         let app_mode = AppMode::Interactive; // Default to Interactive mode for now
