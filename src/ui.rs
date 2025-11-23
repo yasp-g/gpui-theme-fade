@@ -29,6 +29,10 @@ pub fn render_interactive_ui(
     ];
 
     div()
+        .track_focus(&view.root_focus_handle)
+        .on_mouse_down(gpui::MouseButton::Left, cx.listener(|view, _, window, cx| {
+            view.focus_root(window, cx);
+        }))
         .key_context("InteractiveUI")
         .on_action(cx.listener(AppView::on_focus_next))
         .on_action(cx.listener(AppView::on_focus_prev))

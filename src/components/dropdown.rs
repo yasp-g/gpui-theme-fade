@@ -27,6 +27,7 @@ pub fn render_dropdown(
         + Clone,
     cx: &mut Context<AppView>,
 ) -> impl IntoElement {
+    let header_focus_handle = focus_handle.clone();
     let selected_theme_name = themes[selected_index].name.clone();
 
     let text_color = theme.0.get("text").map_or(gpui::black(), |c| c.hsla);
@@ -72,6 +73,10 @@ pub fn render_dropdown(
                 .border_color(border_color)
                 .rounded_md()
                 .hover(|style| style.bg(element_hover))
+                .on_mouse_down(gpui::MouseButton::Left, move |_, window, cx| {
+                    cx.stop_propagation();
+                    window.focus(&header_focus_handle);
+                })
                 .on_click(cx.listener(on_toggle))
                 .child(selected_theme_name)
                 .child(div().child("▼")),

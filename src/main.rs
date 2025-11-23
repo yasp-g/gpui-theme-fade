@@ -120,6 +120,7 @@ pub struct AppView {
     pub sleep_input_state: ValidatedInputState,
     pub fade_input_state: ValidatedInputState,
     pub run_simulation_focus_handle: FocusHandle,
+    pub root_focus_handle: FocusHandle,
 }
 
 impl AppView {
@@ -129,6 +130,7 @@ impl AppView {
         fade_input: Entity<TextInput>,
     ) -> Self {
         let end_theme_index = cx.global::<AppState>().themes.len().saturating_sub(1);
+        let root_focus_handle = cx.focus_handle();
 
         Self {
             start_dropdown_state: DropdownState::new(0, 1, cx),
@@ -142,6 +144,7 @@ impl AppView {
                 validation_message: None,
             },
             run_simulation_focus_handle: cx.focus_handle().tab_index(5).tab_stop(true),
+            root_focus_handle,
         }
     }
 
@@ -155,6 +158,10 @@ impl AppView {
 
     fn on_submit(&mut self, _: &Submit, _: &mut Window, cx: &mut Context<Self>) {
         self.run_simulation(cx);
+    }
+
+    pub fn focus_root(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        window.focus(&self.root_focus_handle);
     }
 
     pub fn toggle_start_dropdown(&mut self, cx: &mut Context<Self>) {
@@ -567,8 +574,12 @@ fn main() {
 
         // --- Open Window and Set Window-Specific Handlers ---
         let _ = cx
-            .open_window(Default::default(), |_, cx| {
-                cx.new(|cx| AppView::new(cx, sleep_duration_input, fade_duration_input))
+            .open_window(Default::default(), |window, cx| {
+                let view = cx.new(|cx| AppView::new(cx, sleep_duration_input, fade_duration_input));
+                view.update(cx, |view, _cx| {
+                    window.focus(&view.root_focus_handle);
+                });
+                view
             })
             .unwrap();
     });

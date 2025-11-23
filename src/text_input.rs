@@ -97,9 +97,11 @@ impl TextInput {
     fn on_mouse_down(
         &mut self,
         event: &MouseDownEvent,
-        _window: &mut Window,
+        window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        cx.stop_propagation();
+        window.focus(&self.focus_handle);
         self.is_selecting = true;
 
         if event.modifiers.shift {
