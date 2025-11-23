@@ -69,14 +69,15 @@ This phase focuses on separating the core, UI-agnostic logic from the test harne
 
 This phase focuses on fixing usability bugs and adding quality-of-life features to make the standalone demo a polished and shareable showcase of the core logic.
 
-### 1. Decouple "Enter" Key from Simulation
+### 1. Implement Standard Form Submission UX
 
-- **Description:** Remove the confusing behavior where pressing `Enter` in a text field can start the simulation. The `Enter` key should only confirm actions within the currently focused context (e.g., selecting a dropdown item).
+- **Description:** Adopt a standard form submission model where `Cmd+Enter` submits globally, and `Enter` only submits when the "Run Simulation" button is focused. This prevents accidental submissions while typing in text fields.
 - **Status:** `[ ] Not Started`
 - **Priority:** High
 - **Tasks:**
-  - [ ] In `main.rs`, remove the `KeyBinding` that links the `Enter` key to the `Submit` action for the `TextInput` context.
-  - [ ] The `Submit` action will now only be triggered by an explicit click on the "Run Simulation" button.
+  - [ ] Replace the global `Enter` -> `Submit` binding with `Cmd+Enter` -> `Submit` in `main.rs`.
+  - [ ] Assign a specific key context (e.g., "RunButton") to the "Run Simulation" button in `ui.rs`.
+  - [ ] Bind `Enter` -> `Submit` specifically for the "RunButton" context in `main.rs`.
 
 ### 2. Fix Enter Key Handling in Dropdowns
 
