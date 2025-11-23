@@ -164,3 +164,14 @@ This phase focuses on fixing usability bugs and adding quality-of-life features 
 
 - We should implement the standard UX for double and triple clicking text for the textinputs
 - If text in a textinput is highlighted, clicking away (even to another textinput) doesn't un-do the highlight (this feels like incorrect UX, right?)
+
+### 5. Click-Away does not Release Focus
+
+- When a component is focused, should this focus be _released_ when clicked away? What is the standard UX for this workflow?
+
+### 6. App ID
+
+- How can we set an app ID for the interactive UI?
+- I became aware of this issue because I use aerospace as a window manager on my mac. When I command `aerospace list-apps`, this is returned for the app: `62369 | NULL-APP-BUNDLE-ID               | gpui-test`.
+  - What exactly is `NULL-APP-BUNDLE-ID`?
+  - We should set this to something meaningful, no?
