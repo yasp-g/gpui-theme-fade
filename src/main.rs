@@ -191,7 +191,6 @@ impl AppView {
     }
 
     pub fn close_dropdowns(&mut self, cx: &mut Context<Self>) {
-        println!("close_dropdowns called");
         self.start_dropdown_state.is_open = false;
         self.end_dropdown_state.is_open = false;
         cx.notify();
@@ -435,7 +434,7 @@ impl AppView {
 
 impl Render for AppView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        println!("AppView::render called");
+        // println!("AppView::render called");
         let app_state = cx.global::<AppState>().clone();
 
         // Logic to close dropdowns if they lose focus

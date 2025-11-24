@@ -4,7 +4,8 @@ use crate::{
     theme::{InterpolatableTheme, Theme},
 };
 use gpui::{
-    ClickEvent, Context, FocusHandle, IntoElement, ScrollHandle, Window, div, hsla, prelude::*,
+    Context, FocusHandle, IntoElement, MouseDownEvent, ScrollHandle, Window, div, hsla, prelude::*,
+    ClickEvent,
 };
 
 pub fn render_dropdown(
@@ -21,7 +22,7 @@ pub fn render_dropdown(
     disabled_indices: &[usize],
     disabled: bool,
     theme: &InterpolatableTheme,
-    on_toggle: impl Fn(&mut AppView, &ClickEvent, &mut Window, &mut Context<AppView>) + 'static,
+    on_toggle: impl Fn(&mut AppView, &MouseDownEvent, &mut Window, &mut Context<AppView>) + 'static,
     on_select: impl Fn(usize, &mut AppView, &ClickEvent, &mut Window, &mut Context<AppView>)
         + 'static
         + Clone,
@@ -75,11 +76,14 @@ pub fn render_dropdown(
                     s.track_focus(focus_handle)
                         .focus(|s| s.border_color(focus_color))
                         .hover(|style| style.bg(element_hover))
-                        .on_mouse_down(gpui::MouseButton::Left, move |_, window, cx| {
-                            cx.stop_propagation();
-                            window.focus(&header_focus_handle);
-                        })
-                        .on_click(cx.listener(on_toggle))
+                        .on_mouse_down(
+                            gpui::MouseButton::Left,
+                            cx.listener(move |view, event, window, cx| {
+                                cx.stop_propagation();
+                                window.focus(&header_focus_handle);
+                                on_toggle(view, event, window, cx);
+                            }),
+                        )
                 })
                 .child(selected_theme_name)
                 .child(div().child("▼")),
