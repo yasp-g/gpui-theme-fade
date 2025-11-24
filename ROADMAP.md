@@ -144,7 +144,7 @@ This phase focuses on fixing usability bugs, standardizing application behavior,
 - **Tasks:**
   - [x] **Double-Click:** Select the word under the cursor.
   - [x] **Triple-Click:** Select the entire line/content.
-  - [ ] **Blur Behavior:** Ensure selection visibility behaves correctly when the input loses focus (optional, but nice to have).
+  - [x] **Blur Behavior:** Ensure selection visibility behaves correctly when the input loses focus (optional, but nice to have).
 
 ---
 
