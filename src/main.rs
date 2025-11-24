@@ -9,6 +9,7 @@ use std::fs;
 
 pub mod simulation;
 pub mod scheduler;
+pub mod state;
 pub mod text_input;
 pub mod ui;
 pub mod components;
@@ -19,6 +20,7 @@ use text_input::{
     SelectRight, TextInput,
 };
 use theme::{flatten_colors, InterpolatableTheme, Theme, ZedThemeFile};
+use crate::state::SimulationState;
 
 // --- 1. ACTIONS ---
 
@@ -127,6 +129,7 @@ pub struct AppView {
     pub fade_input_state: ValidatedInputState,
     pub run_simulation_focus_handle: FocusHandle,
     pub root_focus_handle: FocusHandle,
+    pub simulation_state: SimulationState,
 }
 
 impl AppView {
@@ -151,6 +154,7 @@ impl AppView {
             },
             run_simulation_focus_handle: cx.focus_handle().tab_index(5).tab_stop(true),
             root_focus_handle,
+            simulation_state: SimulationState::Idle,
         }
     }
 
@@ -362,6 +366,10 @@ impl AppView {
         self.close_dropdowns(cx);
     }
     fn run_simulation(&mut self, cx: &mut Context<Self>) {
+        if self.simulation_state != SimulationState::Idle {
+            return;
+        }
+
         let sleep_content = self.sleep_input_state.input.read(cx).content.clone();
         let fade_content = self.fade_input_state.input.read(cx).content.clone();
 

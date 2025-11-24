@@ -4,6 +4,7 @@ pub fn render_form_field(
     label: &'static str,
     validation_message: Option<SharedString>,
     child: impl IntoElement,
+    disabled: bool,
 ) -> impl IntoElement {
     let is_valid = validation_message.is_none();
     div()
@@ -22,6 +23,7 @@ pub fn render_form_field(
                 .child(
                     div()
                         .w_full()
+                        .relative() // Needed for absolute overlay
                         .border_1()
                         .border_color(if is_valid {
                             hsla(0., 0., 1., 0.2)
@@ -30,6 +32,20 @@ pub fn render_form_field(
                         })
                         .rounded_md()
                         .child(child)
+                        .when(disabled, |s| {
+                            s.opacity(0.5)
+                                .child(
+                                    div()
+                                        .absolute()
+                                        .size_full()
+                                        .top_0()
+                                        .left_0()
+                                        .cursor(gpui::CursorStyle::OperationNotAllowed)
+                                        .on_mouse_down(gpui::MouseButton::Left, |_, _, cx| {
+                                            cx.stop_propagation()
+                                        }),
+                                )
+                        }),
                 )
                 .child(
                     div()

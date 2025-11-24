@@ -4,6 +4,7 @@ use crate::components::dropdown::render_dropdown;
 use crate::components::form_field::render_form_field;
 use crate::components::gradient_bar::render_gradient_bar;
 use crate::components::panel::render_panel;
+use crate::state::SimulationState;
 use gpui::{Context, IntoElement, div, prelude::*, rems};
 
 pub fn render_interactive_ui(
@@ -17,6 +18,8 @@ pub fn render_interactive_ui(
 
     let start_theme = &app_state.themes[app_state.start_theme_index];
     let end_theme = &app_state.themes[app_state.end_theme_index];
+
+    let is_running = view.simulation_state != SimulationState::Idle;
 
     let key_colors = [
         "surface.background",
@@ -76,11 +79,13 @@ pub fn render_interactive_ui(
                                 app_state.start_theme_index,
                                 view.start_dropdown_state.preview_index,
                                 &[app_state.end_theme_index],
+                                is_running,
                                 active_theme,
                                 |view, _, _, cx| view.toggle_start_dropdown(cx),
                                 |index, view, _, _, cx| view.select_start_theme(index, cx),
                                 cx,
                             ),
+                            is_running,
                         )
                         .into_any_element(),
                         render_form_field(
@@ -98,36 +103,50 @@ pub fn render_interactive_ui(
                                 app_state.end_theme_index,
                                 view.end_dropdown_state.preview_index,
                                 &[app_state.start_theme_index],
+                                is_running,
                                 active_theme,
                                 |view, _, _, cx| view.toggle_end_dropdown(cx),
                                 |index, view, _, _, cx| view.select_end_theme(index, cx),
                                 cx,
                             ),
+                            is_running,
                         )
                         .into_any_element(),
                         render_form_field(
                             "Sleep Duration (s):",
                             view.sleep_input_state.validation_message.clone(),
                             view.sleep_input_state.input.clone(),
+                            is_running,
                         )
                         .into_any_element(),
                         render_form_field(
                             "Fade Duration (s):",
                             view.fade_input_state.validation_message.clone(),
                             view.fade_input_state.input.clone(),
+                            is_running,
                         )
                         .into_any_element(),
                         render_button(
                             "run-simulation-button",
-                            "Run Simulation",
+                            if is_running { "Running..." } else { "Run Simulation" },
                             Some("RunButton"),
                             &view.run_simulation_focus_handle,
+                            is_running,
                             |view, _, _, cx| {
                                 view.run_simulation(cx);
                             },
                             cx,
                         )
                         .into_any_element(),
+                        div()
+                            .id("simulation-status")
+                            .h_6() // Fixed height to prevent layout shift
+                            .flex()
+                            .items_center()
+                            .justify_center()
+                            .text_sm()
+                            .child(view.simulation_state.display())
+                            .into_any_element(),
                     ],
                 ))
                 .child(render_panel(

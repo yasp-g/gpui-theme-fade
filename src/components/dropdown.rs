@@ -19,6 +19,7 @@ pub fn render_dropdown(
     selected_index: usize,
     preview_index: usize,
     disabled_indices: &[usize],
+    disabled: bool,
     theme: &InterpolatableTheme,
     on_toggle: impl Fn(&mut AppView, &ClickEvent, &mut Window, &mut Context<AppView>) + 'static,
     on_select: impl Fn(usize, &mut AppView, &ClickEvent, &mut Window, &mut Context<AppView>)
@@ -61,8 +62,6 @@ pub fn render_dropdown(
             div()
                 .id(button_id)
                 .w_full()
-                .track_focus(focus_handle)
-                .focus(|s| s.border_color(focus_color))
                 .flex()
                 .justify_between()
                 .items_center()
@@ -71,12 +70,17 @@ pub fn render_dropdown(
                 .border_1()
                 .border_color(border_color)
                 .rounded_md()
-                .hover(|style| style.bg(element_hover))
-                .on_mouse_down(gpui::MouseButton::Left, move |_, window, cx| {
-                    cx.stop_propagation();
-                    window.focus(&header_focus_handle);
+                .when(disabled, |s| s.opacity(0.5).cursor(gpui::CursorStyle::OperationNotAllowed))
+                .when(!disabled, |s| {
+                    s.track_focus(focus_handle)
+                        .focus(|s| s.border_color(focus_color))
+                        .hover(|style| style.bg(element_hover))
+                        .on_mouse_down(gpui::MouseButton::Left, move |_, window, cx| {
+                            cx.stop_propagation();
+                            window.focus(&header_focus_handle);
+                        })
+                        .on_click(cx.listener(on_toggle))
                 })
-                .on_click(cx.listener(on_toggle))
                 .child(selected_theme_name)
                 .child(div().child("▼")),
         )

@@ -4,16 +4,23 @@ use std::{sync::Arc, thread, time::Duration as StdDuration};
 use tracing::info;
 
 use crate::{
+    state::SimulationState,
     theme::{lerp_theme, InterpolatableTheme},
     AppMode,
 };
+
+pub enum SchedulerEvent {
+    ThemeUpdate(InterpolatableTheme),
+    StateChange(SimulationState),
+    Finished,
+}
 
 // --- THEME SCHEDULER SERVICE ---
 
 pub struct ThemeScheduler {
     schedule: Arc<Vec<ScheduleEntry>>,
-    theme_sender: mpsc::Sender<InterpolatableTheme>,
-    app_mode: AppMode, // New field
+    event_sender: mpsc::Sender<SchedulerEvent>,
+    app_mode: AppMode,
 }
 
 #[derive(Clone)]
@@ -25,14 +32,14 @@ pub struct ScheduleEntry {
 
 impl ThemeScheduler {
     pub fn spawn(
-        theme_sender: mpsc::Sender<InterpolatableTheme>,
+        event_sender: mpsc::Sender<SchedulerEvent>,
         schedule: Arc<Vec<ScheduleEntry>>,
-        app_mode: AppMode, // New parameter
+        app_mode: AppMode,
     ) {
         let mut scheduler = Self {
             schedule,
-            theme_sender,
-            app_mode, // Store the new parameter
+            event_sender,
+            app_mode,
         };
         thread::spawn(move || {
             info!("ThemeScheduler: Background thread spawned.");
@@ -60,36 +67,52 @@ impl ThemeScheduler {
             );
 
             if now < fade_start_time {
-                let sleep_dur_ms = (fade_start_time - now).num_milliseconds();
-                if sleep_dur_ms > 0 {
-                    info!("ThemeScheduler: Sleeping for {}ms...", sleep_dur_ms);
-                    thread::sleep(StdDuration::from_millis(sleep_dur_ms as u64));
+                // Sleep Phase
+                loop {
+                    let now = Local::now().time();
+                    if now >= fade_start_time {
+                        break;
+                    }
+                    let remaining_ms = (fade_start_time - now).num_milliseconds();
+                    let seconds = (remaining_ms as f32 / 1000.0).ceil() as usize;
+                    
+                    // Dispatch status update
+                    self.dispatch_event(SchedulerEvent::StateChange(SimulationState::Sleeping {
+                        seconds_remaining: seconds,
+                    }));
+
+                    // Sleep a bit (e.g. 100ms)
+                    thread::sleep(StdDuration::from_millis(100));
                 }
-                continue;
-            } else if now < fade_end_time {
+            }
+            
+            // Double check we are ready to fade
+            let now = Local::now().time();
+            if now < fade_end_time {
                 info!("ThemeScheduler: Starting fade...");
                 self.run_fade_loop(&current_theme, &next_event);
                 current_theme_idx = next_event_idx;
 
-                // Conditional return for Interactive mode
-                if self.app_mode == crate::AppMode::Interactive {
+                if self.app_mode == AppMode::Interactive {
                     info!("ThemeScheduler: Interactive simulation complete. Exiting thread.");
+                    self.dispatch_event(SchedulerEvent::Finished);
                     return;
                 }
-
                 continue;
             } else {
+                // We missed the window or it's time to set final
                 info!("ThemeScheduler: Setting final theme and finding next event.");
-                self.dispatch_theme_update(next_event.theme.clone());
+                self.dispatch_event(SchedulerEvent::ThemeUpdate(next_event.theme.clone()));
                 current_theme_idx = next_event_idx;
-                thread::sleep(StdDuration::from_millis(1000));
+                
+                // Small delay to avoid tight loop if logic is off
+                thread::sleep(StdDuration::from_millis(100));
 
-                // Conditional return for Interactive mode if it somehow gets here
-                if self.app_mode == crate::AppMode::Interactive {
+                if self.app_mode == AppMode::Interactive {
                     info!("ThemeScheduler: Interactive simulation complete (after catch-up). Exiting thread.");
+                    self.dispatch_event(SchedulerEvent::Finished);
                     return;
                 }
-
                 continue;
             }
         }
@@ -109,17 +132,22 @@ impl ThemeScheduler {
             let t = (elapsed_ms / total_duration_ms).clamp(0.0, 1.0);
 
             let interpolated_theme = lerp_theme(start_theme, &target_event.theme, t);
-            self.dispatch_theme_update(interpolated_theme);
+            
+            // Update Theme
+            self.dispatch_event(SchedulerEvent::ThemeUpdate(interpolated_theme));
+            // Update Status
+            self.dispatch_event(SchedulerEvent::StateChange(SimulationState::Fading { progress: t }));
 
             thread::sleep(StdDuration::from_millis(16));
         }
         info!("ThemeScheduler: Fade complete. Setting final theme.");
-        self.dispatch_theme_update(target_event.theme.clone());
+        self.dispatch_event(SchedulerEvent::ThemeUpdate(target_event.theme.clone()));
+        self.dispatch_event(SchedulerEvent::StateChange(SimulationState::Fading { progress: 1.0 }));
     }
 
-    fn dispatch_theme_update(&mut self, theme: InterpolatableTheme) {
-        if let Err(e) = self.theme_sender.try_send(theme) {
-            tracing::warn!("Failed to send theme update: {}", e);
+    fn dispatch_event(&mut self, event: SchedulerEvent) {
+        if let Err(e) = self.event_sender.try_send(event) {
+            tracing::warn!("Failed to send scheduler event: {}", e);
         }
     }
 }
