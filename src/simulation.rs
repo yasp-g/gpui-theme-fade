@@ -67,6 +67,16 @@ pub fn run_simulation_core(
                     }
                     SchedulerEvent::Finished => {
                         info!("Simulation Finished Event Received");
+                        
+                        // UX Improvement: Swap themes
+                        cx.update_global::<AppState, _>(|state, _| {
+                            let old_start = state.start_theme_index;
+                            let old_end = state.end_theme_index;
+                            
+                            state.start_theme_index = old_end;
+                            state.end_theme_index = old_start;
+                        });
+
                         view.simulation_state = SimulationState::Idle;
                         cx.notify();
                     }
