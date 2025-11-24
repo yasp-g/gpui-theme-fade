@@ -173,13 +173,13 @@ This phase focuses on the core business logic of the theme scheduler, introducin
 ### 2. Improve Post-Simulation UX
 
 - **Description:** After a simulation concludes, update the UI to reflect the new state logically and prevent user confusion.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** Low
 - **Tasks:**
-  - [ ] When the `ThemeScheduler` finishes, it will send a final `SimulationState::Idle` message.
-  - [ ] Upon receiving this message, `AppView` will:
-    - [ ] Set `app_state.start_theme_index = app_state.end_theme_index`.
-    - [ ] Advance `app_state.end_theme_index` to the next theme in the list (wrapping around if necessary) to ensure the start and end themes are different.
+  - [x] When the `ThemeScheduler` finishes, it will send a final `SimulationState::Idle` message.
+  - [x] Upon receiving this message, `AppView` will:
+    - [x] Set `app_state.start_theme_index = app_state.end_theme_index`.
+    - [x] Advance `app_state.end_theme_index` to the next theme in the list (wrapping around if necessary) to ensure the start and end themes are different.
 
 ---
 
