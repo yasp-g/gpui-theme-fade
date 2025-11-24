@@ -146,6 +146,16 @@ This phase focuses on fixing usability bugs, standardizing application behavior,
   - [x] **Triple-Click:** Select the entire line/content.
   - [x] **Blur Behavior:** Ensure selection visibility behaves correctly when the input loses focus (optional, but nice to have).
 
+### 9. Theme Consistency Audit
+
+- **Description:** Ensure all UI components use colors from the active theme instead of hardcoded values.
+- **Status:** `[ ] Not Started`
+- **Priority:** Low
+- **Tasks:**
+  - [ ] **Button Component:** Update `render_button` to use themed border and hover colors.
+  - [ ] **Panel Component:** Update `render_panel` to accept theme/cx and use themed border color.
+  - [ ] **Form Field Component:** Update `render_form_field` to accept theme/cx and use themed border and error colors.
+
 ---
 
 ## Phase 3: Simulation Logic & State Management
