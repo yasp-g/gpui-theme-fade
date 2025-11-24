@@ -73,9 +73,9 @@ This phase focuses on fixing usability bugs, standardizing application behavior,
 - **Status:** `[x] Completed`
 - **Priority:** High
 - **Tasks:**
-  - `[x]` Replace the global `Enter` -> `Submit` binding with `Cmd+Enter` -> `Submit` in `main.rs`.
-  - `[x]` Assign a specific key context (e.g., "RunButton") to the "Run Simulation" button in `ui.rs`.
-  - `[x]` Bind `Enter` -> `Submit` specifically for the "RunButton" context in `main.rs`.
+  - [x] Replace the global `Enter` -> `Submit` binding with `Cmd+Enter` -> `Submit` in `main.rs`.
+  - [x] Assign a specific key context (e.g., "RunButton") to the "Run Simulation" button in `ui.rs`.
+  - [x] Bind `Enter` -> `Submit` specifically for the "RunButton" context in `main.rs`.
 
 ### 2. Fix Enter Key Handling in Dropdowns
 
@@ -83,10 +83,10 @@ This phase focuses on fixing usability bugs, standardizing application behavior,
 - **Status:** `[x] Completed`
 - **Priority:** High
 - **Tasks:**
-  - `[x]` Investigate the interaction between `on_confirm_theme` and dropdown state.
-  - `[x]` Ensure `Enter` key press consistently opens/closes the dropdown without flashing.
-  - `[x]` Ensure focus is correctly managed after opening/closing with Enter.
-  - `[x]` Verify that selection is correctly applied when `Enter` is used to confirm.
+  - [x] Investigate the interaction between `on_confirm_theme` and dropdown state.
+  - [x] Ensure `Enter` key press consistently opens/closes the dropdown without flashing.
+  - [x] Ensure focus is correctly managed after opening/closing with Enter.
+  - [x] Verify that selection is correctly applied when `Enter` is used to confirm.
 
 ### 3. Implement "Click-Away-to-Close" for Dropdowns
 
@@ -94,9 +94,9 @@ This phase focuses on fixing usability bugs, standardizing application behavior,
 - **Status:** `[x] Completed`
 - **Priority:** Medium (Easy Win)
 - **Tasks:**
-  - `[x]` In `AppView::render`, when a dropdown is open, register a one-time global mouse-down listener.
-  - `[x]` This listener will check if the click occurred outside the bounds of the open dropdown.
-  - `[x]` If the click is outside, it will dispatch an action to set the dropdown's `is_open` state to `false`.
+  - [x] In `AppView::render`, when a dropdown is open, register a one-time global mouse-down listener.
+  - [x] This listener will check if the click occurred outside the bounds of the open dropdown.
+  - [x] If the click is outside, it will dispatch an action to set the dropdown's `is_open` state to `false`.
 
 ### 4. Implement Static Gradient Previews
 
@@ -114,18 +114,18 @@ This phase focuses on fixing usability bugs, standardizing application behavior,
 - **Status:** `[x] Completed`
 - **Priority:** High
 - **Tasks:**
-  - `[x]` Implement a "Root Focus Handle" for the `InteractiveUI` container.
-  - `[x]` Request focus for the root handle on application startup to enable immediate Tab navigation.
-  - `[x]` Ensure clicking the background focuses the root handle, releasing focus from specific inputs.
+  - [x] Implement a "Root Focus Handle" for the `InteractiveUI` container.
+  - [x] Request focus for the root handle on application startup to enable immediate Tab navigation.
+  - [x] Ensure clicking the background focuses the root handle, releasing focus from specific inputs.
 
 ### 6. Fix Dropdown Toggle Logic (The "Enter" Bug)
 
 - **Description:** Fix persistent issues where the `Enter` key fails to toggle the dropdown open/closed reliably after certain interactions (e.g., after closing it, immediate re-opening fails).
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** High
 - **Tasks:**
-  - [ ] Investigate the `on_confirm_theme` vs. `on_toggle` logic.
-  - [ ] Ensure consistent state transitions regardless of whether the action was triggered via Mouse Click or Enter Key.
+  - [x] Investigate the `on_confirm_theme` vs. `on_toggle` logic.
+  - [x] Ensure consistent state transitions regardless of whether the action was triggered via Mouse Click or Enter Key.
 
 ### 7. Standard Application Behaviors
 
