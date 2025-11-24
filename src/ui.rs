@@ -63,6 +63,7 @@ pub fn render_interactive_ui(
                 .child(render_panel(
                     "left-panel",
                     rems(1.0).into(), // gap_4
+                    active_theme,
                     vec![
                         render_form_field(
                             "Start Theme:",
@@ -86,6 +87,7 @@ pub fn render_interactive_ui(
                                 cx,
                             ),
                             is_running,
+                            active_theme,
                         )
                         .into_any_element(),
                         render_form_field(
@@ -110,6 +112,7 @@ pub fn render_interactive_ui(
                                 cx,
                             ),
                             is_running,
+                            active_theme,
                         )
                         .into_any_element(),
                         render_form_field(
@@ -117,6 +120,7 @@ pub fn render_interactive_ui(
                             view.sleep_input_state.validation_message.clone(),
                             view.sleep_input_state.input.clone(),
                             is_running,
+                            active_theme,
                         )
                         .into_any_element(),
                         render_form_field(
@@ -124,6 +128,7 @@ pub fn render_interactive_ui(
                             view.fade_input_state.validation_message.clone(),
                             view.fade_input_state.input.clone(),
                             is_running,
+                            active_theme,
                         )
                         .into_any_element(),
                         render_button(
@@ -152,6 +157,7 @@ pub fn render_interactive_ui(
                 .child(render_panel(
                     "right-panel",
                     rems(0.5).into(), // gap_2
+                    active_theme,
                     key_colors
                         .iter()
                         .map(|&key| {

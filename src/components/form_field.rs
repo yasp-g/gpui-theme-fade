@@ -1,3 +1,4 @@
+use crate::theme::InterpolatableTheme;
 use gpui::{div, rems, IntoElement, prelude::*, hsla, SharedString};
 
 pub fn render_form_field(
@@ -5,8 +6,15 @@ pub fn render_form_field(
     validation_message: Option<SharedString>,
     child: impl IntoElement,
     disabled: bool,
+    theme: &InterpolatableTheme,
 ) -> impl IntoElement {
     let is_valid = validation_message.is_none();
+    let border_color = theme
+        .0
+        .get("border")
+        .map_or(hsla(0., 0., 1., 0.2), |c| c.hsla);
+    let error_color = theme.0.get("error").map_or(gpui::red(), |c| c.hsla);
+
     div()
         .flex()
         .w_full()
@@ -26,9 +34,9 @@ pub fn render_form_field(
                         .relative() // Needed for absolute overlay
                         .border_1()
                         .border_color(if is_valid {
-                            hsla(0., 0., 1., 0.2)
+                            border_color
                         } else {
-                            gpui::red()
+                            error_color
                         })
                         .rounded_md()
                         .child(child)
@@ -50,7 +58,7 @@ pub fn render_form_field(
                 .child(
                     div()
                         .text_xs()
-                        .text_color(gpui::red())
+                        .text_color(error_color)
                         .min_h(rems(1.0)) // Reserve space for the message to prevent layout shifts
                         .children(validation_message)
                 )

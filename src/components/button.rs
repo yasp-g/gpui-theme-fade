@@ -17,20 +17,28 @@ pub fn render_button(
         .0
         .get("border.focused")
         .map_or(gpui::blue(), |color| color.hsla);
+    let border_color = active_theme
+        .0
+        .get("border")
+        .map_or(hsla(0., 0., 1., 0.2), |c| c.hsla);
+    let hover_bg = active_theme
+        .0
+        .get("element.hover")
+        .map_or(hsla(0., 0., 1., 0.1), |c| c.hsla);
 
     div()
         .id(id)
         .when(key_context.is_some(), |this| this.key_context(key_context.unwrap()))
         .p_2()
         .border_1()
-        .border_color(hsla(0., 0., 1., 0.2))
+        .border_color(border_color)
         .rounded_md()
         .text_center()
         .when(disabled, |s| s.opacity(0.5).cursor(gpui::CursorStyle::OperationNotAllowed))
         .when(!disabled, |s| {
             s.track_focus(focus_handle)
                 .focus(|s| s.border_color(focus_color))
-                .hover(|style| style.bg(hsla(0., 0., 1., 0.1)))
+                .hover(|style| style.bg(hover_bg))
                 .on_mouse_down(gpui::MouseButton::Left, move |_, window, cx| {
                     cx.stop_propagation();
                     window.focus(&button_focus_handle);
