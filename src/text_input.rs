@@ -2,9 +2,9 @@ use std::ops::Range;
 
 use crate::AppState;
 use gpui::{
-    actions, div, fill, point, prelude::*, px, relative, rgba, size, App, Bounds, ClipboardItem,
+    actions, div, fill, point, prelude::*, px, relative, size, App, Bounds, ClipboardItem,
     Context, CursorStyle, ElementId, ElementInputHandler, Entity, EntityInputHandler, FocusHandle,
-    Focusable, GlobalElementId, LayoutId, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
+    Focusable, GlobalElementId, Hsla, LayoutId, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
     PaintQuad, Pixels, Point, ShapedLine, SharedString, Style, TextRun, UTF16Selection,
     UnderlineStyle, Window,
 };
@@ -529,6 +529,17 @@ impl Element for TextElement {
             .text_system()
             .shape_line(display_text, font_size, &runs, None);
 
+        let selection_color = app_state
+            .active_theme
+            .0
+            .get("text.accent")
+            .map(|c| {
+                let mut hsla = c.hsla;
+                hsla.a = 0.3;
+                hsla
+            })
+            .unwrap_or(Hsla::from(gpui::rgba(0x3311ff30)));
+
         let cursor_pos = line.x_for_index(cursor);
         let (selection, cursor) = if selected_range.is_empty() {
             (
@@ -554,7 +565,7 @@ impl Element for TextElement {
                             bounds.bottom(),
                         ),
                     ),
-                    rgba(0x3311ff30),
+                    selection_color,
                 )),
                 None,
             )
@@ -582,7 +593,9 @@ impl Element for TextElement {
             ElementInputHandler::new(bounds, self.input.clone()),
             cx,
         );
-        if let Some(selection) = prepaint.selection.take() {
+        if focus_handle.is_focused(window)
+            && let Some(selection) = prepaint.selection.take()
+        {
             window.paint_quad(selection)
         }
         let line = prepaint.line.take().unwrap();
