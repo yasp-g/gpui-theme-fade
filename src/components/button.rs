@@ -6,6 +6,7 @@ pub fn render_button(
     label: impl IntoElement,
     key_context: Option<&'static str>,
     focus_handle: &FocusHandle,
+    disabled: bool,
     on_click_callback: impl Fn(&mut AppView, &gpui::ClickEvent, &mut gpui::Window, &mut Context<AppView>) + 'static + Clone,
     cx: &mut Context<AppView>,
 ) -> impl IntoElement {
@@ -20,18 +21,21 @@ pub fn render_button(
     div()
         .id(id)
         .when(key_context.is_some(), |this| this.key_context(key_context.unwrap()))
-        .track_focus(focus_handle)
-        .focus(|s| s.border_color(focus_color))
         .p_2()
         .border_1()
         .border_color(hsla(0., 0., 1., 0.2))
         .rounded_md()
         .text_center()
-        .hover(|style| style.bg(hsla(0., 0., 1., 0.1)))
-        .on_mouse_down(gpui::MouseButton::Left, move |_, window, cx| {
-            cx.stop_propagation();
-            window.focus(&button_focus_handle);
+        .when(disabled, |s| s.opacity(0.5).cursor(gpui::CursorStyle::OperationNotAllowed))
+        .when(!disabled, |s| {
+            s.track_focus(focus_handle)
+                .focus(|s| s.border_color(focus_color))
+                .hover(|style| style.bg(hsla(0., 0., 1., 0.1)))
+                .on_mouse_down(gpui::MouseButton::Left, move |_, window, cx| {
+                    cx.stop_propagation();
+                    window.focus(&button_focus_handle);
+                })
+                .on_click(cx.listener(on_click_callback))
         })
-        .on_click(cx.listener(on_click_callback))
         .child(label)
 }
