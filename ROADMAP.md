@@ -155,20 +155,20 @@ This phase focuses on the core business logic of the theme scheduler, introducin
 ### 1. Implement Simulation State Machine
 
 - **Description:** Introduce a formal state machine to manage the application's state during a simulation. This will provide clear, real-time UX feedback and prevent users from starting multiple simulations at once.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** Medium
 - **Tasks:**
-  - [ ] **Create `src/state.rs` Module:**
-    - [ ] Define a public `SimulationState` enum with variants: `Idle`, `Sleeping { end_time: DateTime<Utc> }`, and `Fading { end_time: DateTime<Utc>, from: String, to: String }`.
-    - [ ] Implement a `display()` method on `SimulationState` that returns the formatted status string for the UI (e.g., "Status: Sleeping for 3.2s", "Status: Fading... (55%)").
-  - [ ] **Refactor `AppView`:**
-    - [ ] Add a `simulation_state: SimulationState` field to the `AppView` struct in `main.rs`.
-  - [ ] **Update `ThemeScheduler`:**
-    - [ ] Modify the scheduler to send `SimulationState` updates over the `mpsc` channel instead of `InterpolatableTheme`.
-  - [ ] **Update UI (`ui.rs`):**
-    - [ ] The UI will now render conditionally based on `AppView.simulation_state`.
-    - [ ] When not `Idle`, the "Run Simulation" button and all inputs will be disabled.
-    - [ ] A new `div` will be added to display the formatted status string from `simulation_state.display()`.
+  - [x] **Create `src/state.rs` Module:**
+    - [x] Define a public `SimulationState` enum with variants: `Idle`, `Sleeping { end_time: DateTime<Utc> }`, and `Fading { end_time: DateTime<Utc>, from: String, to: String }`.
+    - [x] Implement a `display()` method on `SimulationState` that returns the formatted status string for the UI (e.g., "Status: Sleeping for 3.2s", "Status: Fading... (55%)").
+  - [x] **Refactor `AppView`:**
+    - [x] Add a `simulation_state: SimulationState` field to the `AppView` struct in `main.rs`.
+  - [x] **Update `ThemeScheduler`:**
+    - [x] Modify the scheduler to send `SimulationState` updates over the `mpsc` channel instead of `InterpolatableTheme`.
+  - [x] **Update UI (`ui.rs`):**
+    - [x] The UI will now render conditionally based on `AppView.simulation_state`.
+    - [x] When not `Idle`, the "Run Simulation" button and all inputs will be disabled.
+    - [x] A new `div` will be added to display the formatted status string from `simulation_state.display()`.
 
 ### 2. Improve Post-Simulation UX
 
