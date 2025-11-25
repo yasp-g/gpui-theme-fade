@@ -193,6 +193,40 @@ This phase focuses on the core business logic of the theme scheduler, introducin
 
 ---
 
+## Phase 4: Advanced Features & Polish
+
+This phase focuses on deepening the application's utility and polishing the visual experience.
+
+### 1. Window Configuration
+
+- **Description:** Ensure the application window behaves like a native desktop app.
+- **Status:** `[ ] Not Started`
+- **Priority:** Medium
+- **Tasks:**
+  - [ ] Set the window title to "Theme Scheduler".
+  - [ ] Enforce a minimum window size (e.g., 400x600) to prevent layout breakage.
+
+### 2. Blinking Cursor
+
+- **Description:** Implement a standard blinking cursor in text inputs for a more natural typing experience.
+- **Status:** `[ ] Not Started`
+- **Priority:** Low
+- **Tasks:**
+  - [ ] Implement an animation loop or timer in `TextInput` to toggle cursor visibility (approx. 500ms interval).
+  - [ ] Ensure blinking pauses/resets on user typing.
+
+### 3. Zed Theme Integration
+
+- **Description:** Seamlessly integrate with the user's existing Zed environment and allow testing of external theme files.
+- **Status:** `[ ] Not Started`
+- **Priority:** High
+- **Tasks:**
+  - [ ] **Auto-Load:** At startup, detect and scan the standard Zed theme directory (e.g., `~/.config/zed/themes`) for JSON theme files.
+  - [ ] **Session Import:** Add an "Import Theme..." button that opens a system file picker.
+  - [ ] **User Guidance:** When a theme is imported for the session, display a message advising the user to place the file in the Zed config folder for persistence.
+
+---
+
 ## Known Issues
 
 - **Background Scheduler Race Condition:** When closing the window with `Cmd+W`, the application process may persist, and the console may log `ERROR gpui: window not found`. This occurs because the background scheduler thread outlives the UI window and attempts to dispatch updates to a closed window. `Cmd+Q` avoids this by terminating the process immediately.
