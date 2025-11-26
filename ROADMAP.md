@@ -225,6 +225,14 @@ This phase focuses on deepening the application's utility and polishing the visu
   - [ ] **Session Import:** Add an "Import Theme..." button that opens a system file picker.
   - [ ] **User Guidance:** When a theme is imported for the session, display a message advising the user to place the file in the Zed config folder for persistence.
 
+### 4. Text Input Focus UX
+
+- **Description:** Improve user experience when navigating between inputs.
+- **Status:** `[ ] Not Started`
+- **Priority:** Low
+- **Tasks:**
+  - [ ] Implement "Select All" behavior when a text input gains focus via keyboard navigation (Tab), allowing immediate overwriting of the value.
+
 ---
 
 ## Known Issues
