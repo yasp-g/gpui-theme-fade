@@ -1,26 +1,26 @@
 use chrono::Duration as ChronoDuration;
 use gpui::{
-    point, px, Action, App, AppContext, Application, Context, Entity, FocusHandle, Global,
-    IntoElement, KeyBinding, Render, ScrollHandle, SharedString, Window, div, prelude::*,
+    div, point, prelude::*, px, Action, App, AppContext, Application, Context, Entity, FocusHandle,
+    Global, IntoElement, KeyBinding, Render, ScrollHandle, SharedString, Window,
 };
 use schemars::JsonSchema;
 use serde::Deserialize;
 use std::fs;
 
-pub mod simulation;
+pub mod components;
 pub mod scheduler;
+pub mod simulation;
 pub mod state;
 pub mod text_input;
-pub mod ui;
-pub mod components;
 pub mod theme;
+pub mod ui;
 
+use crate::state::SimulationState;
 use text_input::{
     Backspace, Copy, Cut, Delete, End, Home, Left, Paste, Right, SelectAll, SelectLeft,
     SelectRight, TextInput,
 };
 use theme::{flatten_colors, InterpolatableTheme, Theme, ZedThemeFile};
-use crate::state::SimulationState;
 
 // --- 1. ACTIONS ---
 
@@ -360,7 +360,12 @@ impl AppView {
         self.close_dropdowns(cx);
     }
 
-    fn on_close_dropdowns(&mut self, _: &CloseDropdowns, _window: &mut Window, cx: &mut Context<Self>) {
+    fn on_close_dropdowns(
+        &mut self,
+        _: &CloseDropdowns,
+        _window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
         println!("on_close_dropdowns called");
         self.close_dropdowns(cx);
     }
@@ -599,13 +604,24 @@ fn main() {
 
         // --- Open Window and Set Window-Specific Handlers ---
         let _ = cx
-            .open_window(Default::default(), |window, cx| {
-                let view = cx.new(|cx| AppView::new(cx, sleep_duration_input, fade_duration_input));
-                view.update(cx, |view, _cx| {
-                    window.focus(&view.root_focus_handle);
-                });
-                view
-            })
+            .open_window(
+                gpui::WindowOptions {
+                    titlebar: Some(gpui::TitlebarOptions {
+                        title: Some("Zed Theme Fader".into()),
+                        ..Default::default()
+                    }),
+                    window_min_size: Some(gpui::size(gpui::px(800.0), gpui::px(500.0))),
+                    ..Default::default()
+                },
+                |window, cx| {
+                    let view =
+                        cx.new(|cx| AppView::new(cx, sleep_duration_input, fade_duration_input));
+                    view.update(cx, |view, _cx| {
+                        window.focus(&view.root_focus_handle);
+                    });
+                    view
+                },
+            )
             .unwrap();
     });
 }
