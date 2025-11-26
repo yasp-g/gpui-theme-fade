@@ -1,4 +1,5 @@
 use std::ops::Range;
+use std::time::Duration;
 
 use crate::AppState;
 use gpui::{
@@ -40,9 +41,31 @@ pub struct TextInput {
     pub last_layout: Option<ShapedLine>,
     pub last_bounds: Option<Bounds<Pixels>>,
     pub is_selecting: bool,
+    pub cursor_visible: bool,
+    pub blink_interval: Duration,
+    pub blink_epoch: usize,
+    pub is_blinking: bool,
 }
 
 impl TextInput {
+    pub fn new(cx: &mut Context<Self>, placeholder: String) -> Self {
+        Self {
+            focus_handle: cx.focus_handle(),
+            content: "".into(),
+            placeholder: placeholder.into(),
+            selected_range: 0..0,
+            selection_reversed: false,
+            marked_range: None,
+            last_layout: None,
+            last_bounds: None,
+            is_selecting: false,
+            cursor_visible: true,
+            blink_interval: Duration::from_millis(500),
+            blink_epoch: 0,
+            is_blinking: false,
+        }
+    }
+
     fn left(&mut self, _: &Left, _: &mut Window, cx: &mut Context<Self>) {
         if self.selected_range.is_empty() {
             self.move_to(self.previous_boundary(self.cursor_offset()), cx);
@@ -84,14 +107,16 @@ impl TextInput {
         if self.selected_range.is_empty() {
             self.select_to(self.previous_boundary(self.cursor_offset()), cx)
         }
-        self.replace_text_in_range(None, "", window, cx)
+        self.replace_text_in_range(None, "", window, cx);
+        self.pause_blink(cx);
     }
 
     fn delete(&mut self, _: &Delete, window: &mut Window, cx: &mut Context<Self>) {
         if self.selected_range.is_empty() {
             self.select_to(self.next_boundary(self.cursor_offset()), cx)
         }
-        self.replace_text_in_range(None, "", window, cx)
+        self.replace_text_in_range(None, "", window, cx);
+        self.pause_blink(cx);
     }
 
     fn on_mouse_down(
@@ -161,6 +186,7 @@ impl TextInput {
 
     fn move_to(&mut self, offset: usize, cx: &mut Context<Self>) {
         self.selected_range = offset..offset;
+        self.pause_blink(cx);
         cx.notify()
     }
 
@@ -183,6 +209,7 @@ impl TextInput {
         }
 
         self.selected_range = start..end;
+        self.pause_blink(cx);
         cx.notify();
     }
 
@@ -222,7 +249,73 @@ impl TextInput {
             self.selection_reversed = !self.selection_reversed;
             self.selected_range = self.selected_range.end..self.selected_range.start;
         }
+        self.pause_blink(cx);
         cx.notify()
+    }
+
+    fn pause_blink(&mut self, cx: &mut Context<Self>) {
+        self.cursor_visible = true;
+        self.blink_epoch += 1;
+        self.is_blinking = true;
+                let epoch = self.blink_epoch;
+                let interval = self.blink_interval;
+                cx.spawn(move |this: gpui::WeakEntity<TextInput>, cx: &mut gpui::AsyncApp| {
+                    let mut cx = cx.clone();
+                    async move {
+                        cx.background_executor().timer(interval).await;
+                        if let Some(this) = this.upgrade() {
+                            this.update(&mut cx, |this, cx| {
+                                this.blink_cursors(epoch, cx);
+                            }).ok();
+                        }
+                    }
+                })
+                .detach();
+        cx.notify();
+    }
+
+    fn start_blinking(&mut self, cx: &mut Context<Self>) {
+        self.is_blinking = true;
+        self.cursor_visible = true;
+        self.blink_epoch += 1;
+        let epoch = self.blink_epoch;
+        let interval = self.blink_interval;
+
+        cx.spawn(move |this: gpui::WeakEntity<TextInput>, cx: &mut gpui::AsyncApp| {
+            let mut cx = cx.clone();
+            async move {
+                cx.background_executor().timer(interval).await;
+                if let Some(this) = this.upgrade() {
+                    this.update(&mut cx, |this, cx| {
+                        this.blink_cursors(epoch, cx);
+                    })
+                    .ok();
+                }
+            }
+        })
+        .detach();
+    }
+
+    fn blink_cursors(&mut self, epoch: usize, cx: &mut Context<Self>) {
+        if epoch == self.blink_epoch && self.is_blinking {
+            self.cursor_visible = !self.cursor_visible;
+            cx.notify();
+
+            let interval = self.blink_interval;
+            cx.spawn(move |this: gpui::WeakEntity<TextInput>, cx: &mut gpui::AsyncApp| {
+                let mut cx = cx.clone();
+                async move {
+                    cx.background_executor().timer(interval).await;
+                    if let Some(this) = this.upgrade() {
+                        this.update(&mut cx, |this, cx| {
+                            this.blink_cursors(epoch, cx);
+                        })
+                        .ok();
+                    }
+                }
+            })
+            .detach();
+        }
     }
 
     fn offset_from_utf16(&self, offset: usize) -> usize {
@@ -346,6 +439,7 @@ impl EntityInputHandler for TextInput {
                 .into();
         self.selected_range = range.start + new_text.len()..range.start + new_text.len();
         self.marked_range.take();
+        self.pause_blink(cx);
         cx.notify();
     }
 
@@ -377,6 +471,7 @@ impl EntityInputHandler for TextInput {
             .map(|new_range| new_range.start + range.start..new_range.end + range.end)
             .unwrap_or_else(|| range.start + new_text.len()..range.start + new_text.len());
 
+        self.pause_blink(cx);
         cx.notify();
     }
 
@@ -544,13 +639,17 @@ impl Element for TextElement {
         let (selection, cursor) = if selected_range.is_empty() {
             (
                 None,
-                Some(fill(
-                    Bounds::new(
-                        point(bounds.left() + cursor_pos, bounds.top()),
-                        size(px(2.), bounds.bottom() - bounds.top()),
-                    ),
-                    gpui::blue(),
-                )),
+                if input.cursor_visible {
+                    Some(fill(
+                        Bounds::new(
+                            point(bounds.left() + cursor_pos, bounds.top()),
+                            size(px(2.), bounds.bottom() - bounds.top()),
+                        ),
+                        gpui::blue(),
+                    ))
+                } else {
+                    None
+                },
             )
         } else {
             (
@@ -616,7 +715,18 @@ impl Element for TextElement {
 }
 
 impl Render for TextInput {
-    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let is_focused = self.focus_handle.is_focused(window);
+
+        if is_focused {
+            if !self.is_blinking {
+                self.start_blinking(cx);
+            }
+        } else {
+            self.is_blinking = false;
+            self.cursor_visible = false;
+        }
+
         let app_state = cx.global::<AppState>();
         let editor_background = app_state
             .active_theme
