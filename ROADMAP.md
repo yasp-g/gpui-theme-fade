@@ -209,11 +209,11 @@ This phase focuses on deepening the application's utility and polishing the visu
 ### 2. Blinking Cursor
 
 - **Description:** Implement a standard blinking cursor in text inputs for a more natural typing experience.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** Low
 - **Tasks:**
-  - [ ] Implement an animation loop or timer in `TextInput` to toggle cursor visibility (approx. 500ms interval).
-  - [ ] Ensure blinking pauses/resets on user typing.
+  - [x] Implement an animation loop or timer in `TextInput` to toggle cursor visibility (approx. 500ms interval).
+  - [x] Ensure blinking pauses/resets on user typing.
 
 ### 3. Zed Theme Integration
 
