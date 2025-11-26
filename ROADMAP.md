@@ -218,12 +218,10 @@ This phase focuses on deepening the application's utility and polishing the visu
 ### 3. Zed Theme Integration
 
 - **Description:** Seamlessly integrate with the user's existing Zed environment and allow testing of external theme files.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** High
 - **Tasks:**
-  - [ ] **Auto-Load:** At startup, detect and scan the standard Zed theme directory (e.g., `~/.config/zed/themes`) for JSON theme files.
-  - [ ] **Session Import:** Add an "Import Theme..." button that opens a system file picker.
-  - [ ] **User Guidance:** When a theme is imported for the session, display a message advising the user to place the file in the Zed config folder for persistence.
+  - [x] **Auto-Load:** At startup, detect and scan the standard Zed theme directory (e.g., `~/.config/zed/themes`) for JSON theme files.
 
 ### 4. Text Input Focus UX
 
