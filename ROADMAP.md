@@ -239,6 +239,14 @@ This phase focuses on deepening the application's utility and polishing the visu
 - **Tasks:**
   - [ ] Sort the combined list of themes (assets + user-loaded) alphabetically by theme name.
 
+### 6. Theme Hinting
+
+- **Description:** Provide subtle, persistent in-app guidance on how to load custom themes from the user's Zed configuration directory.
+- **Status:** `[ ] Not Started`
+- **Priority:** Low
+- **Tasks:**
+  - [ ] Implement a subtle footer text at the bottom of the UI, indicating the path for custom theme files (~/.config/zed/themes).
+
 ---
 
 ## Known Issues
