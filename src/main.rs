@@ -589,6 +589,10 @@ fn main() {
             last_layout: None,
             last_bounds: None,
             is_selecting: false,
+            cursor_visible: true,
+            blink_interval: std::time::Duration::from_millis(500),
+            blink_epoch: 0,
+            is_blinking: false,
         });
         let fade_duration_input = cx.new(|cx| TextInput {
             focus_handle: cx.focus_handle().tab_index(4).tab_stop(true),
@@ -600,6 +604,10 @@ fn main() {
             last_layout: None,
             last_bounds: None,
             is_selecting: false,
+            cursor_visible: true,
+            blink_interval: std::time::Duration::from_millis(500),
+            blink_epoch: 0,
+            is_blinking: false,
         });
 
         // --- Open Window and Set Window-Specific Handlers ---
