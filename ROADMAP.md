@@ -228,10 +228,10 @@ This phase focuses on deepening the application's utility and polishing the visu
 ### 4. Text Input Focus UX
 
 - **Description:** Improve user experience when navigating between inputs.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** Low
 - **Tasks:**
-  - [ ] Implement "Select All" behavior when a text input gains focus via keyboard navigation (Tab), allowing immediate overwriting of the value.
+  - [x] Implement "Select All" behavior when a text input gains focus via keyboard navigation (Tab), allowing immediate overwriting of the value.
 
 ---
 
