@@ -134,7 +134,7 @@ This phase focuses on fixing usability bugs, standardizing application behavior,
 - **Priority:** Medium
 - **Tasks:**
   - [x] **Window Controls:** Add standard key bindings for `Cmd+W` (Close Window) and `Cmd+Q` (Quit).
-  - [x] **App Bundle ID:** Investigated. Setting a custom Bundle ID requires a full App Bundle structure (Info.plist), which is outside the scope of `cargo run`. Skipped for now.
+  - [ ] **App Bundle ID:** Investigated. Setting a custom Bundle ID requires a full App Bundle structure (Info.plist), which is outside the scope of `cargo run`. Skipped for now.
 
 ### 8. Text Input Polish
 
@@ -200,11 +200,11 @@ This phase focuses on deepening the application's utility and polishing the visu
 ### 1. Window Configuration
 
 - **Description:** Ensure the application window behaves like a native desktop app.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** Medium
 - **Tasks:**
-  - [ ] Set the window title to "Theme Scheduler".
-  - [ ] Enforce a minimum window size (e.g., 400x600) to prevent layout breakage.
+  - [x] Set the window title to "Theme Scheduler".
+  - [x] Enforce a minimum window size (e.g., 400x600) to prevent layout breakage.
 
 ### 2. Blinking Cursor
 
