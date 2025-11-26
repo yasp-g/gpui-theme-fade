@@ -233,6 +233,14 @@ This phase focuses on deepening the application's utility and polishing the visu
 - **Tasks:**
   - [x] Implement "Select All" behavior when a text input gains focus via keyboard navigation (Tab), allowing immediate overwriting of the value.
 
+### 5. Dropdown Menu Ordering
+
+- **Description:** Implement consistent and user-friendly sorting for themes displayed in dropdown menus.
+- **Status:** `[ ] Not Started`
+- **Priority:** Medium
+- **Tasks:**
+  - [ ] Sort the combined list of themes (assets + user-loaded) alphabetically by theme name.
+
 ---
 
 ## Known Issues
