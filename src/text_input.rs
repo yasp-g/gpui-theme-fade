@@ -45,12 +45,13 @@ pub struct TextInput {
     pub blink_interval: Duration,
     pub blink_epoch: usize,
     pub is_blinking: bool,
+    pub was_focused: bool,
 }
 
 impl TextInput {
     pub fn new(cx: &mut Context<Self>, placeholder: String) -> Self {
         Self {
-            focus_handle: cx.focus_handle(),
+            focus_handle: cx.focus_handle().tab_index(0).tab_stop(true),
             content: "".into(),
             placeholder: placeholder.into(),
             selected_range: 0..0,
@@ -63,6 +64,7 @@ impl TextInput {
             blink_interval: Duration::from_millis(500),
             blink_epoch: 0,
             is_blinking: false,
+            was_focused: false,
         }
     }
 
@@ -719,10 +721,24 @@ impl Render for TextInput {
         let is_focused = self.focus_handle.is_focused(window);
 
         if is_focused {
+            if !self.was_focused {
+                // Gained focus
+                self.was_focused = true;
+                // Select all text
+                self.selected_range = 0..self.content.len();
+                cx.notify();
+            }
             if !self.is_blinking {
                 self.start_blinking(cx);
             }
         } else {
+            if self.was_focused {
+                // Lost focus
+                self.was_focused = false;
+                // Clear selection when lost focus
+                self.selected_range = 0..0;
+                cx.notify();
+            }
             self.is_blinking = false;
             self.cursor_visible = false;
         }
