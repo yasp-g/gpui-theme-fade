@@ -1,11 +1,13 @@
-use crate::AppView;
 use crate::components::button::render_button;
 use crate::components::dropdown::render_dropdown;
 use crate::components::form_field::render_form_field;
 use crate::components::gradient_bar::render_gradient_bar;
 use crate::components::panel::render_panel;
 use crate::state::SimulationState;
-use gpui::{Context, IntoElement, div, prelude::*, rems};
+use crate::AppView;
+use gpui::{div, prelude::*, rems, Context, IntoElement};
+
+const SHOW_THEME_HINT_FOOTER: bool = true;
 
 pub fn render_interactive_ui(
     view: &mut crate::AppView,
@@ -33,9 +35,12 @@ pub fn render_interactive_ui(
 
     div()
         .track_focus(&view.root_focus_handle)
-        .on_mouse_down(gpui::MouseButton::Left, cx.listener(|view, _, window, cx| {
-            view.focus_root(window, cx);
-        }))
+        .on_mouse_down(
+            gpui::MouseButton::Left,
+            cx.listener(|view, _, window, cx| {
+                view.focus_root(window, cx);
+            }),
+        )
         .key_context("InteractiveUI")
         .on_action(cx.listener(AppView::on_focus_next))
         .on_action(cx.listener(AppView::on_focus_prev))
@@ -133,7 +138,11 @@ pub fn render_interactive_ui(
                         .into_any_element(),
                         render_button(
                             "run-simulation-button",
-                            if is_running { "Running..." } else { "Run Simulation" },
+                            if is_running {
+                                "Running..."
+                            } else {
+                                "Run Simulation"
+                            },
                             Some("RunButton"),
                             &view.run_simulation_focus_handle,
                             is_running,
@@ -182,4 +191,18 @@ pub fn render_interactive_ui(
                         .collect::<Vec<_>>(),
                 )),
         )
+        .when(SHOW_THEME_HINT_FOOTER, |parent| {
+            parent.child(
+                div()
+                    .w_full()
+                    .text_center()
+                    .text_xs()
+                    .p_1()
+                    .text_color(text_color)
+                    .opacity(0.6)
+                    .child(format!(
+                        "Themes found in ~/.config/zed/themes loaded at startup."
+                    )),
+            )
+        })
 }
