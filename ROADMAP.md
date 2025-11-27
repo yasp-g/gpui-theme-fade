@@ -242,10 +242,10 @@ This phase focuses on deepening the application's utility and polishing the visu
 ### 6. Theme Hinting
 
 - **Description:** Provide subtle, persistent in-app guidance on how to load custom themes from the user's Zed configuration directory.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** Low
 - **Tasks:**
-  - [ ] Implement a subtle footer text at the bottom of the UI, indicating the path for custom theme files (~/.config/zed/themes).
+  - [x] Implement a subtle footer text at the bottom of the UI, indicating the path for custom theme files (~/.config/zed/themes).
 
 ---
 
