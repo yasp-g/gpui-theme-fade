@@ -247,6 +247,17 @@ This phase focuses on deepening the application's utility and polishing the visu
 - **Tasks:**
   - [x] Implement a subtle footer text at the bottom of the UI, indicating the path for custom theme files (~/.config/zed/themes).
 
+### 7. Centralized Focus & Border Styling
+
+- **Description:** Improve visual accessibility and consistency by centralizing border and focus state logic for inputs in the `form_field` component.
+- **Status:** `[ ] Not Started`
+- **Priority:** High
+- **Tasks:**
+  - [ ] **Refactor `render_form_field`:** Update to accept `is_focused: bool` and manage all border and focus ring styling (using 2px width for focus).
+  - [ ] **Update `render_dropdown`:** Remove internal border styling from the dropdown button, delegating it to the parent `form_field`.
+  - [ ] **Update `ui.rs`:** Pass `is_focused` state (derived from focus handles) to all `render_form_field` calls.
+  - [ ] **Update `render_button`:** Ensure standalone buttons match the new 2px focus style for consistency.
+
 ---
 
 ## Known Issues
