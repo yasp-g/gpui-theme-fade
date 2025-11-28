@@ -40,13 +40,15 @@ pub fn render_interactive_ui(
     let is_running = view.simulation_state != SimulationState::Idle;
 
     let key_colors = [
+        "editor.background",
         "surface.background",
         "text",
+        "text.accent",
+        "element.selected",
+        "border.focused",
         "element.background",
         "element.hover",
-        "element.selected",
         "border",
-        "border.focused",
     ];
 
     div()

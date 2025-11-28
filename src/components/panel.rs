@@ -14,6 +14,7 @@ pub fn render_panel(
 
     div()
         .id(id)
+        .h_full() // Added h_full
         .flex()
         .flex_col()
         .gap(gap)
