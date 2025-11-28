@@ -4,7 +4,7 @@ The overarching purpose of the project is to help me learn Rust and broaden my a
 
 ## Core Development Principle: Trust the Source
 
-**GPUI is in active development.** This means its API can change, and my internal knowledge may become outdated. To ensure accuracy and avoid repeated errors, the primary source of truth for GPUI development must be the existing, working code in this project and the GPUI source code cloned in `sandbox/gpui-source/gpui/`.
+**GPUI is in active development.** This means its API can change, and my internal knowledge may become outdated. To ensure accuracy and avoid repeated errors, the primary source of truth for GPUI development must be the existing, working code in this project and the GPUI source code cloned in `sandbox/zed-source/zed/crates/gpui/`. There are also `.../gpui_macros/` and `.../gpui_tokio/`, although I'm not sure what exactly these crates are.
 
 ## When encountering a compilation error or implementing a new feature, the first step is always to **look for existing patterns within the project**. If a pattern is discovered or a new solution is found, **this `GEMINI.md` file must be updated** to document the finding for future reference.
 
@@ -49,7 +49,7 @@ To ensure clarity and alignment, the `ROADMAP.md` file will serve as the single 
 - **Planning First:** Before implementing any new feature, bug fix, or significant refactoring, a detailed plan must be added to `ROADMAP.md`. This plan should follow the established format, breaking the work down into clear, actionable tasks.
 - **Executing the Plan:** All implementation work should directly follow the plan laid out in the roadmap.
 - **Keeping it Current:** As tasks are completed, their corresponding checkboxes (`- [ ]`) must be marked as done (`- [x]`). The "Last Updated" date should also be updated periodically.
-- **Verify Before Documenting:** All changes to documentation, especially updating task statuses in `ROADMAP.md`, must only occur *after* the corresponding code changes have been verified by running the application or tests and confirming the fix/feature works as expected.
+- **Verify Before Documenting:** All changes to documentation, especially updating task statuses in `ROADMAP.md`, must only occur _after_ the corresponding code changes have been verified by running the application or tests and confirming the fix/feature works as expected.
 
 This process ensures that we always have a clear, up-to-date view of the project's status and direction.
 
@@ -62,15 +62,15 @@ Investigation into the Zed source code (`sandbox/zed-source/zed/`) has revealed 
 - **No Direct Action:** There is no simple, global `Action` to dispatch for setting a theme (e.g., `actions::SetTheme("MyTheme")`). The theme is changed by modifying the user's settings file.
 
 - **The Key Function:** The central function for persisting a settings change is `settings::update_settings_file`.
-    - **Location:** `crates/settings/src/settings_file.rs`
-    - **Signature:** `pub fn update_settings_file(fs: Arc<dyn Fs>, cx: &App, update: impl FnOnce(&mut SettingsContent, &App))`
+  - **Location:** `crates/settings/src/settings_file.rs`
+  - **Signature:** `pub fn update_settings_file(fs: Arc<dyn Fs>, cx: &App, update: impl FnOnce(&mut SettingsContent, &App))`
 
 - **Mechanism:** To change the theme, our extension must call `update_settings_file`. This function takes a closure that receives a mutable `SettingsContent` object. Our code will run inside this closure.
 
 - **Implementation Steps:**
-    1. Within the `update` closure, our code will receive `&mut SettingsContent`.
-    2. We will then call the `theme::settings::set_theme` helper function, passing it the `SettingsContent` object and the name of the new theme.
-    3. The `update_settings_file` function will then handle the process of saving the modified `SettingsContent` to the user's `settings.json` file, triggering a theme change across the application.
+  1. Within the `update` closure, our code will receive `&mut SettingsContent`.
+  2. We will then call the `theme::settings::set_theme` helper function, passing it the `SettingsContent` object and the name of the new theme.
+  3. The `update_settings_file` function will then handle the process of saving the modified `SettingsContent` to the user's `settings.json` file, triggering a theme change across the application.
 
 This is the canonical way to make persistent setting changes and is the path our extension must follow to apply a new theme as part of its scheduling logic.
 

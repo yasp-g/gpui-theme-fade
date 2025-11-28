@@ -277,6 +277,47 @@ This phase focuses on deepening the application's utility and polishing the visu
   - [x] Update `key_colors` list with high-impact keys (`editor.background`, `text.accent`).
   - [x] Reorder gradients by visual priority.
 
+## Phase 5: Editor Preview
+
+This phase focuses on creating a realistic "Code Editor" preview to demonstrate how the theme applies to syntax highlighting and UI elements like tabs and file trees.
+
+### 1. CodePreview Component Scaffolding
+
+- **Description:** Create the basic structure of the editor preview component, including the container, tab bar, and line number gutter.
+- **Status:** `[ ] Not Started`
+- **Priority:** High
+- **Tasks:**
+  - [ ] Create `src/components/code_preview.rs`.
+  - [ ] Implement layout: Header (Tabs), Sidebar (Gutter), Main Content (Code).
+  - [ ] Apply theme backgrounds (`editor.background`, `tab.active.background`).
+
+### 2. Static Code Data
+
+- **Description:** Define the internal data structures to represent a syntax-highlighted code snippet.
+- **Status:** `[ ] Not Started`
+- **Priority:** High
+- **Tasks:**
+  - [ ] Define `Token` struct (text, color_key).
+  - [ ] Hardcode a representative Rust code snippet using these tokens.
+
+### 3. Token Rendering
+
+- **Description:** Implement the rendering logic to display the code snippet with correct theme colors.
+- **Status:** `[ ] Not Started`
+- **Priority:** High
+- **Tasks:**
+  - [ ] Map theme syntax keys (e.g., `keyword`, `string`, `function`) to colors.
+  - [ ] Render lines and tokens with proper indentation.
+
+### 4. Integration
+
+- **Description:** Replace the existing Gradient Preview panel with the new Editor Preview component.
+- **Status:** `[ ] Not Started`
+- **Priority:** Medium
+- **Tasks:**
+  - [ ] Replace `render_gradient_bar` loop in `ui.rs` with `render_code_preview`.
+  - [ ] Ensure layout responsiveness.
+
 ---
 
 ## Known Issues
