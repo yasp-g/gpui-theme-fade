@@ -30,14 +30,14 @@ pub fn render_button(
         .id(id)
         .when(key_context.is_some(), |this| this.key_context(key_context.unwrap()))
         .p_2()
-        .border_1()
+        .border_2()
         .border_color(border_color)
         .rounded_md()
         .text_center()
         .when(disabled, |s| s.opacity(0.5).cursor(gpui::CursorStyle::OperationNotAllowed))
         .when(!disabled, |s| {
             s.track_focus(focus_handle)
-                .focus(|s| s.border_color(focus_color))
+                .focus(|s| s.border_2().border_color(focus_color))
                 .hover(|style| style.bg(hover_bg))
                 .on_mouse_down(gpui::MouseButton::Left, move |_, window, cx| {
                     cx.stop_propagation();

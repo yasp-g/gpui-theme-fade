@@ -6,6 +6,7 @@ pub fn render_form_field(
     validation_message: Option<SharedString>,
     child: impl IntoElement,
     disabled: bool,
+    is_focused: bool,
     theme: &InterpolatableTheme,
 ) -> impl IntoElement {
     let is_valid = validation_message.is_none();
@@ -13,6 +14,10 @@ pub fn render_form_field(
         .0
         .get("border")
         .map_or(hsla(0., 0., 1., 0.2), |c| c.hsla);
+    let focus_color = theme
+        .0
+        .get("border.focused")
+        .map_or(gpui::blue(), |c| c.hsla);
     let error_color = theme.0.get("error").map_or(gpui::red(), |c| c.hsla);
 
     div()
@@ -32,12 +37,12 @@ pub fn render_form_field(
                     div()
                         .w_full()
                         .relative() // Needed for absolute overlay
-                        .border_1()
-                        .border_color(if is_valid {
+                        .when(is_focused, |s| s.border_2().border_color(focus_color))
+                        .when(!is_focused, |s| s.border_2().border_color(if is_valid {
                             border_color
                         } else {
                             error_color
-                        })
+                        }))
                         .rounded_md()
                         .child(child)
                         .when(disabled, |s| {

@@ -67,14 +67,11 @@ pub fn render_dropdown(
                 .justify_between()
                 .items_center()
                 .gap_2()
-                .p_2()
-                .border_1()
-                .border_color(border_color)
+                .p_1()
                 .rounded_md()
                 .when(disabled, |s| s.opacity(0.5).cursor(gpui::CursorStyle::OperationNotAllowed))
                 .when(!disabled, |s| {
                     s.track_focus(focus_handle)
-                        .focus(|s| s.border_color(focus_color))
                         .hover(|style| style.bg(element_hover))
                         .on_mouse_down(
                             gpui::MouseButton::Left,

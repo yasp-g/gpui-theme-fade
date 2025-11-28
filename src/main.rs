@@ -52,13 +52,13 @@ pub struct FocusNext;
 #[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
 pub struct FocusPrev;
 
-#[derive(Clone, PartialEq, Action)]
-pub struct Cancel;
-
-#[derive(Clone, PartialEq, Action)]
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
 pub struct CloseDropdowns;
 
-#[derive(Clone, PartialEq, Action)]
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
+pub struct Cancel;
+
+#[derive(Clone, PartialEq, Action, Deserialize, JsonSchema)]
 pub struct Quit;
 
 #[derive(Clone, PartialEq, Action)]
@@ -432,8 +432,8 @@ impl AppView {
         cx.notify();
     }
 
-    fn render_interactive_ui(&mut self, cx: &mut Context<Self>) -> impl IntoElement {
-        ui::render_interactive_ui(self, cx)
+    fn render_interactive_ui(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        ui::render_interactive_ui(self, window, cx)
     }
 }
 
@@ -485,7 +485,7 @@ impl Render for AppView {
                     app_state.themes[app_state.start_theme_index].name
                 ))
                 .into_any_element(),
-            AppMode::Interactive => self.render_interactive_ui(cx).into_any_element(),
+            AppMode::Interactive => self.render_interactive_ui(window, cx).into_any_element(),
         };
 
         div()
@@ -495,14 +495,13 @@ impl Render for AppView {
     }
 }
 
-fn main() {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::INFO)
-        .init();
+fn load_themes_from_dir(path: &std::path::Path) -> Vec<Theme> {
+    if !path.exists() || !path.is_dir() {
+        return Vec::new();
+    }
 
-    // --- Parse our mock themes ---
-    let all_themes: Vec<Theme> = fs::read_dir("assets/")
-        .expect("Failed to read assets directory")
+    fs::read_dir(path)
+        .expect("Failed to read directory")
         .filter_map(|entry| {
             let entry = entry.ok()?;
             let path = entry.path();
@@ -513,24 +512,51 @@ fn main() {
             }
         })
         .flat_map(|path| {
-            let json_data = fs::read_to_string(&path).expect("Failed to read theme file");
-            let theme_file: ZedThemeFile =
-                serde_json::from_str(&json_data).expect("Failed to parse theme file");
-
-            theme_file
-                .themes
-                .into_iter()
-                .map(|theme_def| {
-                    let mut interpolatable_theme = InterpolatableTheme::default();
-                    flatten_colors(&theme_def.style.colors, &mut interpolatable_theme, "");
-                    Theme {
-                        name: theme_def.name,
-                        interpolatable_theme,
+            match fs::read_to_string(&path) {
+                Ok(json_data) => match serde_json::from_str::<ZedThemeFile>(&json_data) {
+                    Ok(theme_file) => theme_file
+                        .themes
+                        .into_iter()
+                        .map(|theme_def| {
+                            let mut interpolatable_theme = InterpolatableTheme::default();
+                            flatten_colors(&theme_def.style.colors, &mut interpolatable_theme, "");
+                            Theme {
+                                name: theme_def.name,
+                                interpolatable_theme,
+                            }
+                        })
+                        .collect::<Vec<Theme>>(),
+                    Err(e) => {
+                        eprintln!("Failed to parse theme file {:?}: {}", path, e);
+                        Vec::new()
                     }
-                })
-                .collect::<Vec<Theme>>()
+                },
+                Err(e) => {
+                    eprintln!("Failed to read theme file {:?}: {}", path, e);
+                    Vec::new()
+                }
+            }
         })
-        .collect();
+        .collect()
+}
+
+fn main() {
+    tracing_subscriber::fmt()
+        .with_max_level(tracing::Level::INFO)
+        .init();
+
+    // --- Parse themes ---
+    let mut all_themes = load_themes_from_dir(std::path::Path::new("assets/"));
+
+    if let Ok(home_dir) = std::env::var("HOME") {
+        let mut config_path = std::path::PathBuf::from(home_dir);
+        config_path.push(".config/zed/themes");
+        if config_path.exists() {
+            eprintln!("Loading themes from {:?}", config_path);
+            let user_themes = load_themes_from_dir(&config_path);
+            all_themes.extend(user_themes);
+        }
+    }
 
     Application::new().run(move |cx: &mut App| {
         cx.bind_keys([

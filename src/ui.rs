@@ -11,12 +11,18 @@ const SHOW_THEME_HINT_FOOTER: bool = true;
 
 pub fn render_interactive_ui(
     view: &mut crate::AppView,
+    window: &mut gpui::Window,
     cx: &mut Context<crate::AppView>,
 ) -> impl IntoElement {
     let app_state = cx.global::<crate::AppState>().clone();
     let active_theme = &app_state.active_theme;
     let surface_background = active_theme.0.get("surface.background").unwrap().hsla;
     let text_color = active_theme.0.get("text").unwrap().hsla;
+
+    let start_focused = view.start_dropdown_state.focus_handle.is_focused(window);
+    let end_focused = view.end_dropdown_state.focus_handle.is_focused(window);
+    let sleep_focused = view.sleep_input_state.input.read(cx).focus_handle.is_focused(window);
+    let fade_focused = view.fade_input_state.input.read(cx).focus_handle.is_focused(window);
 
     let start_theme = &app_state.themes[app_state.start_theme_index];
     let end_theme = &app_state.themes[app_state.end_theme_index];
@@ -92,6 +98,7 @@ pub fn render_interactive_ui(
                                 cx,
                             ),
                             is_running,
+                            start_focused,
                             active_theme,
                         )
                         .into_any_element(),
@@ -117,6 +124,7 @@ pub fn render_interactive_ui(
                                 cx,
                             ),
                             is_running,
+                            end_focused,
                             active_theme,
                         )
                         .into_any_element(),
@@ -125,6 +133,7 @@ pub fn render_interactive_ui(
                             view.sleep_input_state.validation_message.clone(),
                             view.sleep_input_state.input.clone(),
                             is_running,
+                            sleep_focused,
                             active_theme,
                         )
                         .into_any_element(),
@@ -133,6 +142,7 @@ pub fn render_interactive_ui(
                             view.fade_input_state.validation_message.clone(),
                             view.fade_input_state.input.clone(),
                             is_running,
+                            fade_focused,
                             active_theme,
                         )
                         .into_any_element(),
