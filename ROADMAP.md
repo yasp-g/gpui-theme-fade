@@ -261,12 +261,21 @@ This phase focuses on deepening the application's utility and polishing the visu
 ### 8. Vertical Layout Exploration
 
 - **Description:** Refactor the UI to use a vertical stacking layout (Top Label, Full-width Input) to improve visual balance and accommodate larger previews.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** Medium
 - **Tasks:**
-  - [ ] Refactor `render_form_field` to use a vertical flex column (Label on top of Input).
-  - [ ] Remove fixed width constraints on inputs to allow full-width expansion.
-  - [ ] Integrate gradient previews into the main flow (optional).
+  - [x] Refactor `render_form_field` to use a vertical flex column (Label on top of Input).
+  - [x] Remove fixed width constraints on inputs to allow full-width expansion.
+  - [x] Integrate gradient previews into the main flow (optional).
+
+### 9. Gradient Preview Refinement
+
+- **Description:** Audit and expand the set of theme keys visualized in the gradient panel to better represent the theme's character.
+- **Status:** `[ ] Not Started`
+- **Priority:** Low
+- **Tasks:**
+  - [ ] Update `key_colors` list with high-impact keys (`editor.background`, `text.accent`).
+  - [ ] Reorder gradients by visual priority.
 
 ---
 
