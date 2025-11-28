@@ -22,17 +22,21 @@ pub fn render_form_field(
 
     div()
         .flex()
+        .flex_col() // Changed from horizontal flex to vertical
         .w_full()
-        .justify_between()
-        .items_start()
-        .child(div().child(label))
+        .gap_1() // Added gap between label and input area
+        .child(
+            div()
+                .text_lg()
+                .child(label)
+        ) // Label is now top child
         .child(
             div()
                 .flex()
                 .flex_col()
-                .w(rems(12.0))
+                .w_full() // Changed from fixed width to full width
                 .gap_1()
-                .items_end()
+                .items_start() // Changed from items_end to items_start for left alignment
                 .child(
                     div()
                         .w_full()

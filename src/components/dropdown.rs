@@ -103,7 +103,7 @@ pub fn render_dropdown(
                         .occlude()
                         .absolute()
                         .right_0()
-                        .w_48()
+                        .w_full()
                         .border_1()
                         .border_color(focus_color)
                         .bg(popover_bg)

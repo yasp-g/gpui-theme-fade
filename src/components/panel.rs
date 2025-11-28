@@ -14,7 +14,6 @@ pub fn render_panel(
 
     div()
         .id(id)
-        .flex_1()
         .flex()
         .flex_col()
         .gap(gap)

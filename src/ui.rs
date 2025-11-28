@@ -21,8 +21,18 @@ pub fn render_interactive_ui(
 
     let start_focused = view.start_dropdown_state.focus_handle.is_focused(window);
     let end_focused = view.end_dropdown_state.focus_handle.is_focused(window);
-    let sleep_focused = view.sleep_input_state.input.read(cx).focus_handle.is_focused(window);
-    let fade_focused = view.fade_input_state.input.read(cx).focus_handle.is_focused(window);
+    let sleep_focused = view
+        .sleep_input_state
+        .input
+        .read(cx)
+        .focus_handle
+        .is_focused(window);
+    let fade_focused = view
+        .fade_input_state
+        .input
+        .read(cx)
+        .focus_handle
+        .is_focused(window);
 
     let start_theme = &app_state.themes[app_state.start_theme_index];
     let end_theme = &app_state.themes[app_state.end_theme_index];
@@ -71,9 +81,9 @@ pub fn render_interactive_ui(
                 .flex_1()
                 .flex()
                 .gap_4()
-                .child(render_panel(
+                .child(div().w_64().flex_shrink_0().child(render_panel(
                     "left-panel",
-                    rems(1.0).into(), // gap_4
+                    rems(0.0).into(), // gap_0
                     active_theme,
                     vec![
                         render_form_field(
@@ -172,34 +182,36 @@ pub fn render_interactive_ui(
                             .child(view.simulation_state.display())
                             .into_any_element(),
                     ],
-                ))
-                .child(render_panel(
-                    "right-panel",
-                    rems(0.5).into(), // gap_2
-                    active_theme,
-                    key_colors
-                        .iter()
-                        .map(|&key| {
-                            let start_hsla = start_theme
-                                .interpolatable_theme
-                                .0
-                                .get(key)
-                                .map_or(gpui::black(), |c| c.hsla);
-                            let end_hsla = end_theme
-                                .interpolatable_theme
-                                .0
-                                .get(key)
-                                .map_or(gpui::black(), |c| c.hsla);
-                            div()
-                                .flex()
-                                .flex_col()
-                                .gap_1()
-                                .child(div().text_sm().child(key))
-                                .child(render_gradient_bar(start_hsla, end_hsla))
-                                .into_any_element()
-                        })
-                        .collect::<Vec<_>>(),
-                )),
+                )))
+                .child(
+                    div().flex_1().child(render_panel(
+                        "right-panel",
+                        rems(0.5).into(), // gap_2
+                        active_theme,
+                        key_colors
+                            .iter()
+                            .map(|&key| {
+                                let start_hsla = start_theme
+                                    .interpolatable_theme
+                                    .0
+                                    .get(key)
+                                    .map_or(gpui::black(), |c| c.hsla);
+                                let end_hsla = end_theme
+                                    .interpolatable_theme
+                                    .0
+                                    .get(key)
+                                    .map_or(gpui::black(), |c| c.hsla);
+                                div()
+                                    .flex()
+                                    .flex_col()
+                                    .gap_1()
+                                    .child(div().text_sm().child(key))
+                                    .child(render_gradient_bar(start_hsla, end_hsla))
+                                    .into_any_element()
+                            })
+                            .collect::<Vec<_>>(),
+                    )),
+                ),
         )
         .when(SHOW_THEME_HINT_FOOTER, |parent| {
             parent.child(
