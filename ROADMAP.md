@@ -258,6 +258,16 @@ This phase focuses on deepening the application's utility and polishing the visu
   - [x] **Update `ui.rs`:** Pass `is_focused` state (derived from focus handles) to all `render_form_field` calls.
   - [x] **Update `render_button`:** Ensure standalone buttons match the new 2px focus style for consistency.
 
+### 8. Vertical Layout Exploration
+
+- **Description:** Refactor the UI to use a vertical stacking layout (Top Label, Full-width Input) to improve visual balance and accommodate larger previews.
+- **Status:** `[ ] Not Started`
+- **Priority:** Medium
+- **Tasks:**
+  - [ ] Refactor `render_form_field` to use a vertical flex column (Label on top of Input).
+  - [ ] Remove fixed width constraints on inputs to allow full-width expansion.
+  - [ ] Integrate gradient previews into the main flow (optional).
+
 ---
 
 ## Known Issues
