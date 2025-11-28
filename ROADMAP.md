@@ -271,11 +271,11 @@ This phase focuses on deepening the application's utility and polishing the visu
 ### 9. Gradient Preview Refinement
 
 - **Description:** Audit and expand the set of theme keys visualized in the gradient panel to better represent the theme's character.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** Low
 - **Tasks:**
-  - [ ] Update `key_colors` list with high-impact keys (`editor.background`, `text.accent`).
-  - [ ] Reorder gradients by visual priority.
+  - [x] Update `key_colors` list with high-impact keys (`editor.background`, `text.accent`).
+  - [x] Reorder gradients by visual priority.
 
 ---
 
