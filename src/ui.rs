@@ -1,6 +1,6 @@
 use crate::components::button::render_button;
-use crate::components::code_preview::render_code_preview;
 use crate::components::dropdown::render_dropdown;
+use crate::components::editor_preview::render_code_preview;
 use crate::components::form_field::render_form_field;
 // use crate::components::gradient_bar::render_gradient_bar;
 use crate::components::panel::render_panel;
