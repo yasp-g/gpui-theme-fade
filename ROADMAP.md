@@ -318,6 +318,35 @@ This phase focuses on creating a realistic "Code Editor" preview to demonstrate 
   - [x] Replace `render_gradient_bar` loop in `ui.rs` with `render_code_preview`.
   - [x] Ensure layout responsiveness.
 
+### 5. Editor Preview: Structure Refactor
+
+- **Description:** Reorganize the code preview component into a dedicated module folder to support sub-components.
+- **Status:** `[ ] Not Started`
+- **Priority:** High
+- **Tasks:**
+  - [ ] Move `code_preview.rs` to `src/components/editor_preview/mod.rs`.
+  - [ ] Update module registration and imports.
+
+### 6. Editor Preview: Sidebar Components
+
+- **Description:** Implement the "Activity Bar" and "File Tree" to simulate the left side of the IDE.
+- **Status:** `[ ] Not Started`
+- **Priority:** Medium
+- **Tasks:**
+  - [ ] Implement `activity_bar` (icons strip).
+  - [ ] Implement `file_tree` (hierarchical file list).
+  - [ ] Integrate into main preview layout.
+
+### 7. Editor Preview: Decor Components
+
+- **Description:** Implement "Breadcrumbs" and "Status Bar" to complete the IDE look.
+- **Status:** `[ ] Not Started`
+- **Priority:** Low
+- **Tasks:**
+  - [ ] Implement `breadcrumbs` (path navigation).
+  - [ ] Implement `status_bar` (footer).
+  - [ ] Final assembly of the 3-pane layout.
+
 ---
 
 ## Known Issues
