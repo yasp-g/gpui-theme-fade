@@ -1,4 +1,5 @@
 pub mod button;
+pub mod code_preview;
 pub mod dropdown;
 pub mod popover;
 pub mod scrollbar;
