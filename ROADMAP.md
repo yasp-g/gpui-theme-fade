@@ -321,11 +321,11 @@ This phase focuses on creating a realistic "Code Editor" preview to demonstrate 
 ### 5. Editor Preview: Structure Refactor
 
 - **Description:** Reorganize the code preview component into a dedicated module folder to support sub-components.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** High
 - **Tasks:**
-  - [ ] Move `code_preview.rs` to `src/components/editor_preview/mod.rs`.
-  - [ ] Update module registration and imports.
+  - [x] Move `code_preview.rs` to `src/components/editor_preview/mod.rs`.
+  - [x] Update module registration and imports.
 
 ### 6. Editor Preview: Sidebar Components
 
