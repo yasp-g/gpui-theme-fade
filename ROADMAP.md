@@ -284,39 +284,39 @@ This phase focuses on creating a realistic "Code Editor" preview to demonstrate 
 ### 1. CodePreview Component Scaffolding
 
 - **Description:** Create the basic structure of the editor preview component, including the container, tab bar, and line number gutter.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** High
 - **Tasks:**
-  - [ ] Create `src/components/code_preview.rs`.
-  - [ ] Implement layout: Header (Tabs), Sidebar (Gutter), Main Content (Code).
-  - [ ] Apply theme backgrounds (`editor.background`, `tab.active.background`).
+  - [x] Create `src/components/code_preview.rs`.
+  - [x] Implement layout: Header (Tabs), Sidebar (Gutter), Main Content (Code).
+  - [x] Apply theme backgrounds (`editor.background`, `tab.active.background`).
 
 ### 2. Static Code Data
 
 - **Description:** Define the internal data structures to represent a syntax-highlighted code snippet.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** High
 - **Tasks:**
-  - [ ] Define `Token` struct (text, color_key).
-  - [ ] Hardcode a representative Rust code snippet using these tokens.
+  - [x] Define `Token` struct (text, color_key).
+  - [x] Hardcode a representative Rust code snippet using these tokens.
 
 ### 3. Token Rendering
 
 - **Description:** Implement the rendering logic to display the code snippet with correct theme colors.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** High
 - **Tasks:**
-  - [ ] Map theme syntax keys (e.g., `keyword`, `string`, `function`) to colors.
-  - [ ] Render lines and tokens with proper indentation.
+  - [x] Map theme syntax keys (e.g., `keyword`, `string`, `function`) to colors.
+  - [x] Render lines and tokens with proper indentation.
 
 ### 4. Integration
 
 - **Description:** Replace the existing Gradient Preview panel with the new Editor Preview component.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** Medium
 - **Tasks:**
-  - [ ] Replace `render_gradient_bar` loop in `ui.rs` with `render_code_preview`.
-  - [ ] Ensure layout responsiveness.
+  - [x] Replace `render_gradient_bar` loop in `ui.rs` with `render_code_preview`.
+  - [x] Ensure layout responsiveness.
 
 ---
 
