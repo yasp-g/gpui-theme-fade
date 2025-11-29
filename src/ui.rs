@@ -1,7 +1,8 @@
 use crate::components::button::render_button;
+use crate::components::code_preview::render_code_preview;
 use crate::components::dropdown::render_dropdown;
 use crate::components::form_field::render_form_field;
-use crate::components::gradient_bar::render_gradient_bar;
+// use crate::components::gradient_bar::render_gradient_bar;
 use crate::components::panel::render_panel;
 use crate::state::SimulationState;
 use crate::AppView;
@@ -21,35 +22,25 @@ pub fn render_interactive_ui(
 
     let start_focused = view.start_dropdown_state.focus_handle.is_focused(window);
     let end_focused = view.end_dropdown_state.focus_handle.is_focused(window);
-    let sleep_focused = view
-        .sleep_input_state
-        .input
-        .read(cx)
-        .focus_handle
-        .is_focused(window);
-    let fade_focused = view
-        .fade_input_state
-        .input
-        .read(cx)
-        .focus_handle
-        .is_focused(window);
+    let sleep_focused = view.sleep_input_state.input.read(cx).focus_handle.is_focused(window);
+    let fade_focused = view.fade_input_state.input.read(cx).focus_handle.is_focused(window);
 
-    let start_theme = &app_state.themes[app_state.start_theme_index];
-    let end_theme = &app_state.themes[app_state.end_theme_index];
+    // let start_theme = &app_state.themes[app_state.start_theme_index];
+    // let end_theme = &app_state.themes[app_state.end_theme_index];
 
     let is_running = view.simulation_state != SimulationState::Idle;
 
-    let key_colors = [
-        "editor.background",
-        "surface.background",
-        "text",
-        "text.accent",
-        "element.selected",
-        "border.focused",
-        "element.background",
-        "element.hover",
-        "border",
-    ];
+    // let key_colors = [
+    //     "editor.background",
+    //     "surface.background",
+    //     "text",
+    //     "text.accent",
+    //     "element.selected",
+    //     "border.focused",
+    //     "element.background",
+    //     "element.hover",
+    //     "border",
+    // ];
 
     div()
         .track_focus(&view.root_focus_handle)
@@ -188,30 +179,9 @@ pub fn render_interactive_ui(
                 .child(
                     div().flex_1().child(render_panel(
                         "right-panel",
-                        rems(0.5).into(), // gap_2
+                        rems(0.0).into(),
                         active_theme,
-                        key_colors
-                            .iter()
-                            .map(|&key| {
-                                let start_hsla = start_theme
-                                    .interpolatable_theme
-                                    .0
-                                    .get(key)
-                                    .map_or(gpui::black(), |c| c.hsla);
-                                let end_hsla = end_theme
-                                    .interpolatable_theme
-                                    .0
-                                    .get(key)
-                                    .map_or(gpui::black(), |c| c.hsla);
-                                div()
-                                    .flex()
-                                    .flex_col()
-                                    .gap_1()
-                                    .child(div().text_sm().child(key))
-                                    .child(render_gradient_bar(start_hsla, end_hsla))
-                                    .into_any_element()
-                            })
-                            .collect::<Vec<_>>(),
+                        vec![render_code_preview(active_theme).into_any_element()],
                     )),
                 ),
         )

@@ -36,7 +36,7 @@ pub fn render_dropdown(
         .0
         .get("text.disabled")
         .map_or(hsla(0.0, 0.0, 0.5, 1.0), |c| c.hsla);
-    let border_color = theme.0.get("border").map_or(gpui::black(), |c| c.hsla);
+    // let border_color = theme.0.get("border").map_or(gpui::black(), |c| c.hsla);
     let focus_color = theme
         .0
         .get("border.focused")
