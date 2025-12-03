@@ -1,5 +1,11 @@
 use crate::theme::InterpolatableTheme;
-use gpui::{div, hsla, prelude::*, IntoElement, Rems};
+use gpui::{div, hsla, prelude::*, IntoElement, Rems, SharedString};
+
+pub mod activity_bar;
+pub mod file_tree;
+
+use activity_bar::render_activity_bar;
+use file_tree::render_file_tree;
 
 struct Token {
     text: &'static str,
@@ -33,7 +39,7 @@ fn get_example_code() -> Vec<Vec<Token>> {
             Token::new(" ", "text"),
             Token::new("User", "type"),
             Token::new(" ", "text"),
-            Token::new("{", "punctuation.bracket"),
+            Token::new("{ ", "punctuation.bracket"),
         ],
         // Line 4:     id: usize,
         vec![
@@ -64,7 +70,7 @@ fn get_example_code() -> Vec<Vec<Token>> {
             Token::new("main", "function"),
             Token::new("()", "punctuation.bracket"),
             Token::new(" ", "text"),
-            Token::new("{", "punctuation.bracket"),
+            Token::new("{ ", "punctuation.bracket"),
         ],
         // Line 9:     let user = User {
         vec![
@@ -77,7 +83,7 @@ fn get_example_code() -> Vec<Vec<Token>> {
             Token::new(" ", "text"),
             Token::new("User", "type"),
             Token::new(" ", "text"),
-            Token::new("{", "punctuation.bracket"),
+            Token::new("{ ", "punctuation.bracket"),
         ],
         // Line 10:
         vec![
@@ -94,9 +100,9 @@ fn get_example_code() -> Vec<Vec<Token>> {
             Token::new("name", "property"),
             Token::new(":", "punctuation.delimiter"),
             Token::new(" ", "text"),
-            Token::new("\"", "string"),
+            Token::new("", "string"),
             Token::new("Alice", "string"),
-            Token::new("\"", "string"),
+            Token::new("", "string"),
             Token::new(".", "punctuation.delimiter"),
             Token::new("to_string", "function"),
             Token::new("()", "punctuation.bracket"),
@@ -113,9 +119,9 @@ fn get_example_code() -> Vec<Vec<Token>> {
             Token::new("    ", "text"),
             Token::new("println!", "function"),
             Token::new("(", "punctuation.bracket"),
-            Token::new("\"", "string"),
+            Token::new("", "string"),
             Token::new("Hello, {}!", "string"),
-            Token::new("\"", "string"),
+            Token::new("", "string"),
             Token::new(", ", "punctuation.delimiter"),
             Token::new("user", "variable"),
             Token::new(".", "punctuation.delimiter"),
@@ -127,7 +133,7 @@ fn get_example_code() -> Vec<Vec<Token>> {
     ]
 }
 
-pub fn render_code_preview(theme: &InterpolatableTheme) -> impl IntoElement {
+pub fn render_editor_preview(theme: &InterpolatableTheme) -> impl IntoElement {
     let editor_bg = theme
         .0
         .get("editor.background")
@@ -155,11 +161,10 @@ pub fn render_code_preview(theme: &InterpolatableTheme) -> impl IntoElement {
 
     let code_lines = get_example_code();
 
+    // Outer most container for the entire IDE mock
     div()
         .flex()
-        .flex_col()
         .size_full()
-        .bg(editor_bg)
         .border_1()
         .border_color(
             theme
@@ -168,64 +173,74 @@ pub fn render_code_preview(theme: &InterpolatableTheme) -> impl IntoElement {
                 .map_or(hsla(0., 0., 0., 1.), |c| c.hsla),
         )
         .rounded_md()
+        .child(render_activity_bar(theme)) // Activity Bar
+        .child(render_file_tree(theme))     // File Tree
         .child(
-            // Tab Bar
+            // The existing editor content (tabs, code, gutter)
             div()
                 .flex()
-                .items_center()
-                .h(Rems(2.0)) // 32px
-                .bg(tab_bar_bg)
-                .child(render_tab("main.rs", true, tab_active_bg, text_color))
-                .child(render_tab("lib.rs", false, tab_inactive_bg, text_color)),
-        )
-        .child(
-            // Editor Area
-            div()
-                .flex()
-                .flex_1()
+                .flex_col()
+                .flex_1() // Takes remaining width
+                .bg(editor_bg) // Editor background should be here
                 .child(
-                    // Gutter
+                    // Tab Bar
                     div()
-                        .w(Rems(3.0))
-                        .py_2()
                         .flex()
-                        .flex_col()
-                        .items_end()
-                        .pr_2()
-                        .text_color(line_number_color)
-                        .text_sm()
-                        .bg(editor_bg)
-                        .font_family(".SystemUIFont") // Monospace for alignment
-                        .children(
-                            (1..=code_lines.len())
-                                .map(|i| div().h(Rems(1.25)).child(i.to_string())),
-                        ),
+                        .items_center()
+                        .h(Rems(2.0)) // 32px
+                        .bg(tab_bar_bg)
+                        .child(render_tab("main.rs", true, tab_active_bg, text_color))
+                        .child(render_tab("lib.rs", false, tab_inactive_bg, text_color)),
                 )
                 .child(
-                    // Code Content
+                    // Editor Area (Gutter + Code)
                     div()
+                        .flex()
                         .flex_1()
-                        .p_2()
-                        .text_sm()
-                        .text_color(text_color)
-                        .font_family(".SystemUIFont") // Need monospace
-                        .children(code_lines.into_iter().map(|tokens| {
+                        .child(
+                            // Gutter
                             div()
-                                .h(Rems(1.25)) // Fixed line height to match gutter
+                                .w(Rems(3.0))
+                                .py_2()
                                 .flex()
-                                .children(tokens.into_iter().map(|token| {
-                                    let color = if token.syntax == "text" {
-                                        text_color
-                                    } else {
-                                        theme
-                                            .0
-                                            .get(&format!("syntax.{}", token.syntax))
-                                            .map(|c| c.hsla)
-                                            .unwrap_or(text_color)
-                                    };
-                                    div().text_color(color).child(token.text)
-                                }))
-                        })),
+                                .flex_col()
+                                .items_end()
+                                .pr_2()
+                                .text_color(line_number_color)
+                                .text_sm()
+                                .bg(editor_bg)
+                                .font_family(".SystemUIFont") // Monospace for alignment
+                                .children(
+                                    (1..=code_lines.len())
+                                        .map(|i| div().h(Rems(1.25)).child(i.to_string())),
+                                ),
+                        )
+                        .child(
+                            // Code Content
+                            div()
+                                .flex_1()
+                                .p_2()
+                                .text_sm()
+                                .text_color(text_color)
+                                .font_family(".SystemUIFont") // Monospace for alignment
+                                .children(code_lines.into_iter().map(|tokens| {
+                                    div()
+                                        .h(Rems(1.25)) // Fixed line height to match gutter
+                                        .flex()
+                                        .children(tokens.into_iter().map(|token| {
+                                            let color = if token.syntax == "text" {
+                                                text_color
+                                            } else {
+                                                theme
+                                                    .0
+                                                    .get(&format!("syntax.{}", token.syntax))
+                                                    .map(|c| c.hsla)
+                                                    .unwrap_or(text_color)
+                                            };
+                                            div().text_color(color).child(token.text)
+                                        }))
+                                })),
+                        ),
                 ),
         )
 }

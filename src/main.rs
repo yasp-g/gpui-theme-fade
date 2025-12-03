@@ -1,8 +1,10 @@
 use chrono::Duration as ChronoDuration;
 use gpui::{
-    div, point, prelude::*, px, Action, App, AppContext, Application, Context, Entity, FocusHandle,
-    Global, IntoElement, KeyBinding, Render, ScrollHandle, SharedString, Window,
+    div, point, prelude::*, px, Action, App, AppContext, Application, AssetSource, Context, Entity,
+    FocusHandle, Global, IntoElement, KeyBinding, Render, Result, ScrollHandle, SharedString,
+    Window,
 };
+use rust_embed::RustEmbed;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use std::fs;
@@ -540,6 +542,30 @@ fn load_themes_from_dir(path: &std::path::Path) -> Vec<Theme> {
         .collect()
 }
 
+#[derive(RustEmbed)]
+#[folder = "assets"]
+struct Assets;
+
+impl AssetSource for Assets {
+    fn load(&self, path: &str) -> Result<Option<std::borrow::Cow<'static, [u8]>>> {
+        Self::get(path)
+            .map(|f| Ok(Some(f.data)))
+            .unwrap_or(Ok(None))
+    }
+
+    fn list(&self, path: &str) -> Result<Vec<SharedString>> {
+        Ok(Self::iter()
+            .filter_map(|p| {
+                if p.starts_with(path) {
+                    Some(p.to_string().into())
+                } else {
+                    None
+                }
+            })
+            .collect())
+    }
+}
+
 fn main() {
     tracing_subscriber::fmt()
         .with_max_level(tracing::Level::INFO)
@@ -558,7 +584,7 @@ fn main() {
         }
     }
 
-    Application::new().run(move |cx: &mut App| {
+    Application::new().with_assets(Assets).run(move |cx: &mut App| {
         cx.bind_keys([
             KeyBinding::new("backspace", Backspace, Some("TextInput")),
             KeyBinding::new("delete", Delete, Some("TextInput")),
