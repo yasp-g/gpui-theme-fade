@@ -1,5 +1,5 @@
 use crate::theme::InterpolatableTheme;
-use gpui::{IntoElement, Rems, div, hsla, prelude::*};
+use gpui::{div, hsla, prelude::*, IntoElement, Rems, SharedString};
 
 pub mod breadcrumbs;
 pub mod file_tree;
@@ -12,11 +12,16 @@ use status_bar::render_status_bar;
 struct Token {
     text: &'static str,
     syntax: &'static str,
+    is_error: bool,
 }
 
 impl Token {
     const fn new(text: &'static str, syntax: &'static str) -> Self {
-        Self { text, syntax }
+        Self { text, syntax, is_error: false }
+    }
+
+    const fn error(text: &'static str, syntax: &'static str) -> Self {
+        Self { text, syntax, is_error: true }
     }
 }
 
@@ -93,7 +98,7 @@ fn get_example_code() -> Vec<Vec<Token>> {
             Token::new("id", "property"),
             Token::new(":", "punctuation.delimiter"),
             Token::new(" ", "text"),
-            Token::new("1", "number"),
+            Token::error("\"oops\"", "string"), // Simulated Error
             Token::new(",", "punctuation.delimiter"),
         ],
         // Line 11:
@@ -152,11 +157,18 @@ pub fn render_editor_preview(theme: &InterpolatableTheme) -> impl IntoElement {
         .0
         .get("tab.inactive_background")
         .map_or(tab_bar_bg, |c| c.hsla);
-    let text_color = theme.0.get("text").map_or(hsla(0., 0., 1., 1.), |c| c.hsla);
+    let text_color = theme
+        .0
+        .get("text")
+        .map_or(hsla(0., 0., 1., 1.), |c| c.hsla);
     let line_number_color = theme
         .0
         .get("editor.line_number")
         .map_or(hsla(0., 0., 0.5, 1.), |c| c.hsla);
+    let error_color = theme
+        .0
+        .get("error")
+        .map_or(hsla(0., 1.0, 0.5, 1.), |c| c.hsla);
 
     let code_lines = get_example_code();
 
@@ -229,27 +241,30 @@ pub fn render_editor_preview(theme: &InterpolatableTheme) -> impl IntoElement {
                                         .text_color(text_color)
                                         .font_family(".SystemUIFont")
                                         .children(code_lines.into_iter().map(|tokens| {
-                                            div().h(Rems(1.25)).flex().children(
-                                                tokens.into_iter().map(|token| {
+                                            div()
+                                                .h(Rems(1.25))
+                                                .flex()
+                                                .children(tokens.into_iter().map(|token| {
                                                     let color = if token.syntax == "text" {
                                                         text_color
                                                     } else {
-                                                        let key =
-                                                            format!("syntax.{}", token.syntax);
+                                                        let key = format!("syntax.{}", token.syntax);
                                                         theme
                                                             .0
                                                             .get(&key)
-                                                            .or_else(|| {
-                                                                theme
-                                                                    .0
-                                                                    .get(&format!("{}.color", key))
-                                                            })
+                                                            .or_else(|| theme.0.get(&format!("{}.color", key)))
                                                             .map(|c| c.hsla)
                                                             .unwrap_or(text_color)
                                                     };
-                                                    div().text_color(color).child(token.text)
-                                                }),
-                                            )
+                                                    div()
+                                                        .text_color(color)
+                                                        .when(token.is_error, |s| {
+                                                            s.text_decoration_1()
+                                                             .text_decoration_color(error_color)
+                                                             .text_decoration_wavy()
+                                                        })
+                                                        .child(token.text)
+                                                }))
                                         })),
                                 ),
                         ),
