@@ -330,12 +330,12 @@ This phase focuses on creating a realistic "Code Editor" preview to demonstrate 
 ### 6. Editor Preview: Sidebar Components
 
 - **Description:** Implement the "Activity Bar" and "File Tree" to simulate the left side of the IDE.
-- **Status:** `[ ] Not Started`
+- **Status:** `[x] Completed`
 - **Priority:** Medium
 - **Tasks:**
-  - [ ] Implement `activity_bar` (icons strip).
-  - [ ] Implement `file_tree` (hierarchical file list).
-  - [ ] Integrate into main preview layout.
+  - [x] Implement `activity_bar` (icons strip).
+  - [x] Implement `file_tree` (hierarchical file list).
+  - [x] Integrate into main preview layout.
 
 ### 7. Editor Preview: Decor Components
 

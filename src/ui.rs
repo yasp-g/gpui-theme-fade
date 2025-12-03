@@ -1,6 +1,6 @@
 use crate::components::button::render_button;
 use crate::components::dropdown::render_dropdown;
-use crate::components::editor_preview::render_code_preview;
+use crate::components::editor_preview::render_editor_preview;
 use crate::components::form_field::render_form_field;
 // use crate::components::gradient_bar::render_gradient_bar;
 use crate::components::panel::render_panel;
@@ -179,9 +179,9 @@ pub fn render_interactive_ui(
                 .child(
                     div().flex_1().child(render_panel(
                         "right-panel",
-                        rems(0.0).into(),
+                        rems(0.0).into(), // No gap
                         active_theme,
-                        vec![render_code_preview(active_theme).into_any_element()],
+                        vec![render_editor_preview(active_theme).into_any_element()],
                     )),
                 ),
         )
