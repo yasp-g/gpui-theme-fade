@@ -329,23 +329,23 @@ This phase focuses on creating a realistic "Code Editor" preview to demonstrate 
 
 ### 6. Editor Preview: Sidebar Components
 
-- **Description:** Implement the "Activity Bar" and "File Tree" to simulate the left side of the IDE.
+- **Description:** Implement the File Tree to simulate the left side of the IDE.
 - **Status:** `[x] Completed`
 - **Priority:** Medium
 - **Tasks:**
-  - [x] Implement `activity_bar` (icons strip).
   - [x] Implement `file_tree` (hierarchical file list).
   - [x] Integrate into main preview layout.
+  - [x] (Activity Bar was deprecated in favor of Status Bar toggle integration).
 
 ### 7. Editor Preview: Decor Components
 
-- **Description:** Implement "Breadcrumbs" and "Status Bar" to complete the IDE look.
-- **Status:** `[ ] Not Started`
+- **Description:** Implement "Breadcrumbs" and a high-fidelity "Status Bar" to complete the IDE look.
+- **Status:** `[x] Completed`
 - **Priority:** Low
 - **Tasks:**
-  - [ ] Implement `breadcrumbs` (path navigation).
-  - [ ] Implement `status_bar` (footer).
-  - [ ] Final assembly of the 3-pane layout.
+  - [x] Implement `breadcrumbs` (path navigation).
+  - [x] Implement `status_bar` with interactive-style icon buttons matching Zed's design.
+  - [x] Final assembly of the 3-pane layout.
 
 ---
 
