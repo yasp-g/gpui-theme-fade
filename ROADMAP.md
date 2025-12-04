@@ -374,7 +374,67 @@ This phase focuses on creating a realistic "Code Editor" preview to demonstrate 
     - [x] `list.hover_background` for row hover states.
   - [x] **Mock Data Polish:** Update the example file list to demonstrate these new features (e.g., a modified file, an added file, and a folded directory).
 
-## Phase 6: Simulation Control & Preview Enhancements
+## Phase 6: Editor Surface Polish
+
+This phase focuses on adding high-fidelity visual details to the editor preview to better support theme testing and validation.
+
+### 1. Editor Scrollbars
+
+- **Description:** Add visual scrollbars to the File Tree and Code Editor panes.
+- **Status:** [ ] Pending
+- **Priority:** High
+- **Tasks:**
+  - [ ] Implement `render_scrollbar` component.
+  - [ ] Integrate scrollbars into `file_tree.rs` and `mod.rs` (main editor view).
+  - [ ] Apply theme keys: `scrollbar.thumb`, `scrollbar.track`, `scrollbar.thumb.hover`.
+
+### 2. Active Line Highlight
+
+- **Description:** Highlight the background of the currently active line in the editor.
+- **Status:** [ ] Pending
+- **Priority:** High
+- **Tasks:**
+  - [ ] Update `mod.rs` to render a background highlight for the "active" line (e.g., line 10).
+  - [ ] Apply theme key: `editor.active_line_background`.
+
+### 3. Text Selection
+
+- **Description:** Simulate text selection to verify contrast against syntax highlighting.
+- **Status:** [ ] Pending
+- **Priority:** High
+- **Tasks:**
+  - [ ] Overlay a selection rectangle on a portion of the code (e.g., "User" in line 9).
+  - [ ] Apply theme key: `selection.background`.
+
+### 4. Editor Indent Guides
+
+- **Description:** Add indentation guides to the code editor area, matching the style of the file tree.
+- **Status:** [ ] Pending
+- **Priority:** Medium
+- **Tasks:**
+  - [ ] Implement indentation guides in `mod.rs` for the code lines.
+  - [ ] Apply theme keys: `editor.indent_guide`, `editor.active_indent_guide`.
+
+### 5. Gutter Git Markers
+
+- **Description:** Add colored bars in the gutter to indicate git status (added/modified lines).
+- **Status:** [ ] Pending
+- **Priority:** Medium
+- **Tasks:**
+  - [ ] Update gutter rendering in `mod.rs` to include status bars for specific lines.
+  - [ ] Apply theme keys: `editor.gutter.created`, `editor.gutter.modified`.
+
+### 6. Blinking Cursor
+
+- **Description:** Add a blinking cursor to the editor preview to mimic a live editing session.
+- **Status:** [ ] Pending
+- **Priority:** Medium
+- **Tasks:**
+  - [ ] Implement a blinking cursor element (using a timer or CSS animation equivalent).
+  - [ ] Position it at the end of the "active" line or selection.
+  - [ ] Apply theme key: `editor.active_line_number` (or standard cursor color).
+
+## Phase 7: Simulation Control & Preview Enhancements
 
 This phase focuses on adding user control over simulation parameters and expanding the editor preview with more realistic features.
 
