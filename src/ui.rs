@@ -3,10 +3,10 @@ use crate::components::dropdown::render_dropdown;
 use crate::components::editor_preview::render_editor_preview;
 use crate::components::form_field::render_form_field;
 // use crate::components::gradient_bar::render_gradient_bar;
+use crate::AppView;
 use crate::components::panel::render_panel;
 use crate::state::SimulationState;
-use crate::AppView;
-use gpui::{div, prelude::*, rems, Context, IntoElement};
+use gpui::{Context, IntoElement, div, prelude::*, rems};
 
 const SHOW_THEME_HINT_FOOTER: bool = true;
 
@@ -22,8 +22,24 @@ pub fn render_interactive_ui(
 
     let start_focused = view.start_dropdown_state.focus_handle.is_focused(window);
     let end_focused = view.end_dropdown_state.focus_handle.is_focused(window);
-    let sleep_focused = view.sleep_input_state.input.read(cx).focus_handle.is_focused(window);
-    let fade_focused = view.fade_input_state.input.read(cx).focus_handle.is_focused(window);
+    let sleep_focused = view
+        .sleep_input_state
+        .input
+        .read(cx)
+        .focus_handle
+        .is_focused(window);
+    let fade_focused = view
+        .fade_input_state
+        .input
+        .read(cx)
+        .focus_handle
+        .is_focused(window);
+    let fps_focused = view
+        .fps_input_state
+        .input
+        .read(cx)
+        .focus_handle
+        .is_focused(window);
 
     // let start_theme = &app_state.themes[app_state.start_theme_index];
     // let end_theme = &app_state.themes[app_state.end_theme_index];
@@ -149,6 +165,15 @@ pub fn render_interactive_ui(
                             active_theme,
                         )
                         .into_any_element(),
+                        render_form_field(
+                            "Target FPS:",
+                            view.fps_input_state.validation_message.clone(),
+                            view.fps_input_state.input.clone(),
+                            is_running,
+                            fps_focused,
+                            active_theme,
+                        )
+                        .into_any_element(),
                         render_button(
                             "run-simulation-button",
                             if is_running {
@@ -176,14 +201,12 @@ pub fn render_interactive_ui(
                             .into_any_element(),
                     ],
                 )))
-                .child(
-                    div().flex_1().child(render_panel(
-                        "right-panel",
-                        rems(0.0).into(), // No gap
-                        active_theme,
-                        vec![render_editor_preview(active_theme).into_any_element()],
-                    )),
-                ),
+                .child(div().flex_1().child(render_panel(
+                    "right-panel",
+                    rems(0.0).into(), // No gap
+                    active_theme,
+                    vec![render_editor_preview(active_theme).into_any_element()],
+                ))),
         )
         .when(SHOW_THEME_HINT_FOOTER, |parent| {
             parent.child(

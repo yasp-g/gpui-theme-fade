@@ -129,6 +129,7 @@ pub struct AppView {
     pub end_dropdown_state: DropdownState,
     pub sleep_input_state: ValidatedInputState,
     pub fade_input_state: ValidatedInputState,
+    pub fps_input_state: ValidatedInputState,
     pub run_simulation_focus_handle: FocusHandle,
     pub root_focus_handle: FocusHandle,
     pub simulation_state: SimulationState,
@@ -139,6 +140,7 @@ impl AppView {
         cx: &mut Context<Self>,
         sleep_input: Entity<TextInput>,
         fade_input: Entity<TextInput>,
+        fps_input: Entity<TextInput>,
     ) -> Self {
         let end_theme_index = cx.global::<AppState>().themes.len().saturating_sub(1);
         let root_focus_handle = cx.focus_handle();
@@ -154,7 +156,11 @@ impl AppView {
                 input: fade_input,
                 validation_message: None,
             },
-            run_simulation_focus_handle: cx.focus_handle().tab_index(5).tab_stop(true),
+            fps_input_state: ValidatedInputState {
+                input: fps_input,
+                validation_message: None,
+            },
+            run_simulation_focus_handle: cx.focus_handle().tab_index(6).tab_stop(true),
             root_focus_handle,
             simulation_state: SimulationState::Idle,
         }
@@ -378,10 +384,12 @@ impl AppView {
 
         let sleep_content = self.sleep_input_state.input.read(cx).content.clone();
         let fade_content = self.fade_input_state.input.read(cx).content.clone();
+        let fps_content = self.fps_input_state.input.read(cx).content.clone();
 
         // Perform validation.
         let sleep_seconds = sleep_content.parse::<f32>();
         let fade_seconds = fade_content.parse::<f32>();
+        let target_fps = fps_content.parse::<u32>();
 
         self.sleep_input_state.validation_message = match sleep_seconds {
             Ok(s) if (0.0..=600.0).contains(&s) => None,
@@ -391,10 +399,15 @@ impl AppView {
             Ok(f) if (0.0..=600.0).contains(&f) => None,
             _ => Some("Value must be between 0 and 600.".into()),
         };
+        self.fps_input_state.validation_message = match target_fps {
+            Ok(f) if (1..=120).contains(&f) => None,
+            _ => Some("Value must be between 1 and 120.".into()),
+        };
 
-        // Only run the simulation if both inputs are valid.
+        // Only run the simulation if all inputs are valid.
         if self.sleep_input_state.validation_message.is_none()
             && self.fade_input_state.validation_message.is_none()
+            && self.fps_input_state.validation_message.is_none()
         {
             let (start_theme, end_theme) = cx.read_global(|app_state: &AppState, _| {
                 (
@@ -409,6 +422,7 @@ impl AppView {
 
             let sleep = sleep_seconds.unwrap();
             let fade = fade_seconds.unwrap();
+            let fps = target_fps.unwrap();
             let sleep_duration = ChronoDuration::seconds(sleep as i64);
             let fade_duration = ChronoDuration::seconds(fade as i64);
 
@@ -426,6 +440,7 @@ impl AppView {
                 end_theme,
                 sleep_duration,
                 fade_duration,
+                fps,
                 start_theme_name.into(),
                 end_theme_name.into(),
             );
@@ -663,6 +678,22 @@ fn main() {
             is_blinking: false,
             was_focused: false,
         });
+        let fps_input = cx.new(|cx| TextInput {
+            focus_handle: cx.focus_handle().tab_index(5).tab_stop(true),
+            content: "60".into(),
+            placeholder: "FPS...".into(),
+            selected_range: 0..0,
+            selection_reversed: false,
+            marked_range: None,
+            last_layout: None,
+            last_bounds: None,
+            is_selecting: false,
+            cursor_visible: true,
+            blink_interval: std::time::Duration::from_millis(500),
+            blink_epoch: 0,
+            is_blinking: false,
+            was_focused: false,
+        });
 
         // --- Open Window and Set Window-Specific Handlers ---
         let _ = cx
@@ -677,7 +708,7 @@ fn main() {
                 },
                 |window, cx| {
                     let view =
-                        cx.new(|cx| AppView::new(cx, sleep_duration_input, fade_duration_input));
+                        cx.new(|cx| AppView::new(cx, sleep_duration_input, fade_duration_input, fps_input));
                     view.update(cx, |view, _cx| {
                         window.focus(&view.root_focus_handle);
                     });

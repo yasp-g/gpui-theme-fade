@@ -21,6 +21,7 @@ pub struct ThemeScheduler {
     schedule: Arc<Vec<ScheduleEntry>>,
     event_sender: mpsc::Sender<SchedulerEvent>,
     app_mode: AppMode,
+    target_fps: u32,
 }
 
 #[derive(Clone)]
@@ -35,11 +36,13 @@ impl ThemeScheduler {
         event_sender: mpsc::Sender<SchedulerEvent>,
         schedule: Arc<Vec<ScheduleEntry>>,
         app_mode: AppMode,
+        target_fps: u32,
     ) {
         let mut scheduler = Self {
             schedule,
             event_sender,
             app_mode,
+            target_fps,
         };
         thread::spawn(move || {
             info!("ThemeScheduler: Background thread spawned.");
@@ -122,6 +125,7 @@ impl ThemeScheduler {
         let fade_start_time = target_event.time - target_event.fade_duration;
         let fade_end_time = target_event.time;
         let total_duration_ms = target_event.fade_duration.num_milliseconds() as f32;
+        let sleep_ms = (1000.0 / self.target_fps as f32).max(1.0) as u64;
 
         loop {
             let now = Local::now().time();
@@ -138,7 +142,7 @@ impl ThemeScheduler {
             // Update Status
             self.dispatch_event(SchedulerEvent::StateChange(SimulationState::Fading { progress: t }));
 
-            thread::sleep(StdDuration::from_millis(16));
+            thread::sleep(StdDuration::from_millis(sleep_ms));
         }
         info!("ThemeScheduler: Fade complete. Setting final theme.");
         self.dispatch_event(SchedulerEvent::ThemeUpdate(target_event.theme.clone()));

@@ -16,12 +16,13 @@ pub fn run_simulation_core(
     end_theme: InterpolatableTheme,
     sleep_duration: ChronoDuration,
     fade_duration: ChronoDuration,
+    target_fps: u32,
     start_theme_name: SharedString,
     end_theme_name: SharedString,
 ) {
     info!(
-        "Running simulation: Start='{}', End='{}'",
-        start_theme_name, end_theme_name
+        "Running simulation: Start='{}', End='{}', FPS={}",
+        start_theme_name, end_theme_name, target_fps
     );
 
     cx.spawn(move |view: WeakEntity<AppView>, cx: &mut AsyncApp| {
@@ -46,6 +47,7 @@ pub fn run_simulation_core(
             event_sender.clone(),
             sim_schedule,
             crate::AppMode::Interactive,
+            target_fps,
         );
 
         while let Some(event) = event_receiver.next().await {
