@@ -355,8 +355,8 @@ This phase focuses on creating a realistic "Code Editor" preview to demonstrate 
 - **Tasks:**
   - [x] Create `src/components/editor_preview/terminal.rs`.
   - [x] Implement `render_terminal` with a mock shell session (prompt, command, output).
-  - [ ] Update `editor_preview/mod.rs` to handle tab switching logic (Code vs Terminal).
-  - [ ] Map terminal theme keys (e.g., `terminal.background`, `terminal.foreground`) to the new component.
+  - [x] Integrate terminal into editor preview layout (Split Pane).
+  - [x] Map terminal theme keys (e.g., `terminal.background`, `terminal.foreground`) to the new component.
 
 ## Phase 6: Simulation Control & Preview Enhancements
 
