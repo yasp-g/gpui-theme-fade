@@ -4,6 +4,7 @@ use gpui::{div, hsla, prelude::*, IntoElement, Rems, SharedString};
 pub mod breadcrumbs;
 pub mod file_tree;
 pub mod status_bar;
+pub mod terminal;
 
 use breadcrumbs::render_breadcrumbs;
 use file_tree::render_file_tree;
