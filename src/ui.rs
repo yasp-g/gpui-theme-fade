@@ -205,7 +205,7 @@ pub fn render_interactive_ui(
                     "right-panel",
                     rems(0.0).into(), // No gap
                     active_theme,
-                    vec![render_editor_preview(active_theme).into_any_element()],
+                    vec![render_editor_preview(active_theme, cx).into_any_element()],
                 ))),
         )
         .when(SHOW_THEME_HINT_FOOTER, |parent| {
