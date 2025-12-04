@@ -1,5 +1,6 @@
 use crate::theme::InterpolatableTheme;
-use gpui::{div, hsla, prelude::*, IntoElement, Rems, SharedString};
+use crate::AppView;
+use gpui::{div, hsla, prelude::*, Context, IntoElement, Rems, SharedString};
 
 pub mod breadcrumbs;
 pub mod file_tree;
@@ -9,6 +10,7 @@ pub mod terminal;
 use breadcrumbs::render_breadcrumbs;
 use file_tree::render_file_tree;
 use status_bar::render_status_bar;
+use terminal::render_terminal;
 
 struct Token {
     text: &'static str,
@@ -18,11 +20,19 @@ struct Token {
 
 impl Token {
     const fn new(text: &'static str, syntax: &'static str) -> Self {
-        Self { text, syntax, is_error: false }
+        Self {
+            text,
+            syntax,
+            is_error: false,
+        }
     }
 
     const fn error(text: &'static str, syntax: &'static str) -> Self {
-        Self { text, syntax, is_error: true }
+        Self {
+            text,
+            syntax,
+            is_error: true,
+        }
     }
 }
 
@@ -141,7 +151,10 @@ fn get_example_code() -> Vec<Vec<Token>> {
     ]
 }
 
-pub fn render_editor_preview(theme: &InterpolatableTheme) -> impl IntoElement {
+pub fn render_editor_preview(
+    theme: &InterpolatableTheme,
+    cx: &mut Context<AppView>,
+) -> impl IntoElement {
     let editor_bg = theme
         .0
         .get("editor.background")
@@ -227,7 +240,7 @@ pub fn render_editor_preview(theme: &InterpolatableTheme) -> impl IntoElement {
                                         .text_color(line_number_color)
                                         .text_sm()
                                         .bg(editor_bg)
-                                        .font_family(".SystemUIFont")
+                                        .font_family("Menlo")
                                         .children(
                                             (1..=code_lines.len())
                                                 .map(|i| div().h(Rems(1.25)).child(i.to_string())),
@@ -240,7 +253,7 @@ pub fn render_editor_preview(theme: &InterpolatableTheme) -> impl IntoElement {
                                         .p_2()
                                         .text_sm()
                                         .text_color(text_color)
-                                        .font_family(".SystemUIFont")
+                                        .font_family("Menlo")
                                         .children(code_lines.into_iter().map(|tokens| {
                                             div()
                                                 .h(Rems(1.25))
@@ -253,7 +266,8 @@ pub fn render_editor_preview(theme: &InterpolatableTheme) -> impl IntoElement {
                                                         theme
                                                             .0
                                                             .get(&key)
-                                                            .or_else(|| theme.0.get(&format!("{}.color", key)))
+                                                            .or_else(|| theme.0
+                                                                .get(&format!("{}.color", key)))
                                                             .map(|c| c.hsla)
                                                             .unwrap_or(text_color)
                                                     };
@@ -261,18 +275,20 @@ pub fn render_editor_preview(theme: &InterpolatableTheme) -> impl IntoElement {
                                                         .text_color(color)
                                                         .when(token.is_error, |s| {
                                                             s.text_decoration_1()
-                                                             .text_decoration_color(error_color)
-                                                             .text_decoration_wavy()
+                                                                .text_decoration_color(error_color)
+                                                                .text_decoration_wavy()
                                                         })
                                                         .child(token.text)
                                                 }))
                                         })),
                                 ),
-                        ),
+                        )
+                        .child(render_terminal(theme, cx)),
                 ),
         )
         .child(render_status_bar(theme)) // Status Bar at bottom
 }
+
 
 fn render_tab(
     name: impl Into<gpui::SharedString>,

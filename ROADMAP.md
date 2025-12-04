@@ -353,8 +353,8 @@ This phase focuses on creating a realistic "Code Editor" preview to demonstrate 
 - **Status:** [ ] Pending
 - **Priority:** High
 - **Tasks:**
-  - [ ] Create `src/components/editor_preview/terminal.rs`.
-  - [ ] Implement `render_terminal` with a mock shell session (prompt, command, output).
+  - [x] Create `src/components/editor_preview/terminal.rs`.
+  - [x] Implement `render_terminal` with a mock shell session (prompt, command, output).
   - [ ] Update `editor_preview/mod.rs` to handle tab switching logic (Code vs Terminal).
   - [ ] Map terminal theme keys (e.g., `terminal.background`, `terminal.foreground`) to the new component.
 
@@ -376,5 +376,8 @@ This phase focuses on adding user control over simulation parameters and expandi
 ---
 
 ## Known Issues
+
+- **Zed Mono Font Availability:** The "Zed Mono" font is currently not bundled with the application and relies on system-wide installation. For consistent rendering, especially across different operating systems or environments without Zed installed, the font files (IBM Plex Sans and Lilez) need to be properly integrated and loaded within the GPUI application. This should be addressed for a production-ready Zed extension.
+  - **Proposed Solution:** Bundle the font files in `assets/` and use GPUI's font loading API to make them available at startup.
 
 - **Background Scheduler Race Condition:** When closing the window with `Cmd+W`, the application process may persist, and the console may log `ERROR gpui: window not found`. This occurs because the background scheduler thread outlives the UI window and attempts to dispatch updates to a closed window. `Cmd+Q` avoids this by terminating the process immediately.
