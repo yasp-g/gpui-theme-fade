@@ -1,6 +1,6 @@
 # Project Roadmap: GPUI Theme Scheduler
 
-**Last Updated:** 2025-11-23
+**Last Updated:** 2025-12-04
 
 ## Project Overview
 
@@ -346,6 +346,32 @@ This phase focuses on creating a realistic "Code Editor" preview to demonstrate 
   - [x] Implement `breadcrumbs` (path navigation).
   - [x] Implement `status_bar` with interactive-style icon buttons matching Zed's design.
   - [x] Final assembly of the 3-pane layout.
+
+### 8. Terminal Tab Integration
+
+- **Description:** Add a "Terminal" tab to the Editor Preview to demonstrate terminal-specific theme keys and provide a complete IDE feel. Using `Terminal.tsx`, `TerminalShell.tsx`, `TerminalTabs.tsx` files in `sandbox/zed-themes-source/zed-themes/app/components/preview/components/` as inspiration.
+- **Status:** [ ] Pending
+- **Priority:** High
+- **Tasks:**
+  - [ ] Create `src/components/editor_preview/terminal.rs`.
+  - [ ] Implement `render_terminal` with a mock shell session (prompt, command, output).
+  - [ ] Update `editor_preview/mod.rs` to handle tab switching logic (Code vs Terminal).
+  - [ ] Map terminal theme keys (e.g., `terminal.background`, `terminal.foreground`) to the new component.
+
+## Phase 6: Simulation Control & Preview Enhancements
+
+This phase focuses on adding user control over simulation parameters and expanding the editor preview with more realistic features.
+
+### 1. Simulation Frame Rate Control
+
+- **Description:** Allow users to configure the simulation refresh rate (FPS) to test performance impact or smoother animations.
+- **Status:** [x] Completed
+- **Priority:** Medium
+- **Tasks:**
+  - [x] Add `fps` field to `AppState` (default 60) and a new `ValidatedInputState`.
+  - [x] Add a new `ValidatedInput` to the UI for "Target FPS" (Range: 1-120).
+  - [x] Pass `target_fps` to `simulation::run_simulation_core` and `ThemeScheduler`.
+  - [x] Update `ThemeScheduler::run_fade_loop` to calculate thread sleep duration based on the user's requested FPS.
 
 ---
 
