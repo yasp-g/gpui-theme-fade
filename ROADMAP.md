@@ -358,6 +358,22 @@ This phase focuses on creating a realistic "Code Editor" preview to demonstrate 
   - [x] Integrate terminal into editor preview layout (Split Pane).
   - [x] Map terminal theme keys (e.g., `terminal.background`, `terminal.foreground`) to the new component.
 
+### 9. High-Fidelity File Tree
+
+- **Description:** Upgrade the `file_tree` component to visually mimic the structure and style of Zed's actual `ProjectPanel`, based on analysis of `crates/project_panel/src/project_panel.rs` and `crates/ui/src/components/list/list_item.rs`.
+- **Status:** [ ] Pending
+- **Priority:** Medium
+- **Tasks:**
+  - [ ] **Data Structure Update:** Update `FileItem` struct in `file_tree.rs` to support `git_status` (Modified, Added, Ignored), `diagnostic_status` (Error, Warning), and "folded" directory names (e.g., "src/components").
+  - [ ] **Component Refactor (`render_file_item`):** Re-implement the rendering logic to match Zed's `ListItem` layout:
+    - [ ] Use `margin-left` for indentation instead of spacer divs.
+    - [ ] Implement absolute positioning for disclosure chevrons (arrows).
+    - [ ] Support "folded" directory rendering (single line for single-child directories).
+  - [ ] **Theme Integration:** Apply authentic Zed theme keys:
+    - [ ] `git.status.modified`, `git.status.created`, `git.status.ignored` for filename colors.
+    - [ ] `list.hover_background` for row hover states.
+  - [ ] **Mock Data Polish:** Update the example file list to demonstrate these new features (e.g., a modified file, an added file, and a folded directory).
+
 ## Phase 6: Simulation Control & Preview Enhancements
 
 This phase focuses on adding user control over simulation parameters and expanding the editor preview with more realistic features.
