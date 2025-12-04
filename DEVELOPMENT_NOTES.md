@@ -1,3 +1,117 @@
+# Development Notes
+
+## Architectural Decisions
+
+### Theme Transition Strategy: CPU vs. GPU
+
+**Decision:**
+The application implements theme transitions using a **CPU-based state update** mechanism rather than a GPU-accelerated shader approach.
+
+**Mechanism:**
+1.  A background thread calculates the interpolated color values for every key in the theme at the target frame rate (e.g., 60 FPS).
+2.  This new "frame" of theme data is sent to the main thread.
+3.  The global `AppState` is updated, and the UI is notified (`cx.notify()`).
+4.  GPUI re-renders the interface using the new color values.
+
+**Justification:**
+*   **Framework constraints:** GPUI's public API does not currently support injecting custom shaders into standard elements (like `div` or `text`) without modifying the engine's source code. Implementing a "true" GPU fade would require forking GPUI and rewriting the rendering pipeline for every primitive type (quads, shadows, glyphs, etc.).
+*   **Integration goals:** As a Zed extension, this tool must modify the editor's actual settings source of truth (the JSON theme definition) to affect the entire editor globally. A visual-only shader effect would not propagate to other parts of the editor.
+*   **Performance viability:** Unlike web-based editors (Electron), Zed and GPUI are native and highly optimized. The overhead of applying a global state change 60 times a second is negligible in this environment, allowing for smooth animations via CPU interpolation that might cause stuttering in a DOM-based architecture.
+
+**Trade-offs:**
+*   *Pros:* Simplicity, compatibility with all standard UI elements, and correct integration with Zed's settings system.
+*   *Cons:* Higher CPU usage during transitions compared to a shader-based approach (though well within acceptable limits for modern hardware).
+
+---
+
+## GPUI-Specific Learnings
+
+### 1. Unresolved Imports: `gpui::View` and `gpui::WindowContext`
+
+- **Problem:** A recurring compilation error `error[E0432]: unresolved imports` occurs when trying to use `gpui::View` or `gpui::WindowContext` in the function signatures of component render functions or their callbacks. These types are not available in the public API in the way they might seem.
+
+- **Solution:** Do not use generic type parameters like `<V: View>` for component functions. Instead, use the concrete view type directly (e.g., `AppView`). For contexts and callbacks, use `Context<AppView>` instead of `WindowContext`.
+
+- **Example (Correct):** The `render_dropdown` component's `on_toggle` callback signature correctly uses `AppView` and `Context<AppView>`:
+
+  ```rust
+  // In src/components/dropdown.rs
+  pub fn render_dropdown(
+      // ...
+      on_toggle: impl Fn(&mut AppView, &ClickEvent, &mut Window, &mut Context<AppView>) + 'static,
+      // ...
+      cx: &mut Context<AppView>,
+  ) -> impl IntoElement
+  ```
+
+- **Example (Incorrect):**
+  ```rust
+  // This will not compile.
+  pub fn render_dropdown<V: View>(
+      // ...
+      on_toggle: impl Fn(&mut V, &mut WindowContext) + 'static,
+      // ...
+      cx: &mut Context<V>,
+  ) -> impl IntoElement
+  ```
+  This pattern ensures that components are correctly wired to the application's specific `AppView` and its context.
+
+### 2. Manual Scrollbar Implementation
+
+- **Problem:** Applying `.overflow_y_scroll()` to a `div` makes it scrollable with a mouse wheel, but no visible scrollbar (thumb or track) appears. There are no simple style properties like `scrollbar_color` to make it visible.
+
+- **Discovery:** The base `gpui` framework does not automatically render a scrollbar UI. It only provides the scrolling _mechanics_. The developer is responsible for implementing the visual scrollbar as a separate component. The `data_table.rs` example in the GPUI source code is the canonical example of this pattern.
+
+- **Solution:**
+  1.  **Create a `ScrollHandle`:** State that needs to persist for the scrollable element (like the scroll offset) requires a handle. This handle should be stored in a persistent location, such as the `AppState` global, and passed down to the component that needs to scroll.
+  2.  **Track the Element:** Use the `.track_scroll(&scroll_handle)` method on the scrollable `div` to associate it with the handle.
+  3.  **Build a Scrollbar Component:** Create a separate component (e.g., `render_scrollbar`) that also takes the `ScrollHandle`.
+  4.  **Render Manually:** Inside this component, read the state from the handle (`scroll_handle.bounds()`, `scroll_handle.max_offset()`) to calculate the size and position of the scrollbar thumb. Render the thumb as a `div` with an absolute position.
+  5.  **Layout:** Render the scrollable `div` and the `render_scrollbar` component as siblings inside a parent `div` that has `relative()` positioning.
+
+### 3. Implementing Custom `gpui::Element`s
+
+- **Problem:** For complex, stateful, and custom-drawn UI components (like a draggable scrollbar thumb), simply returning a `div()` chain is insufficient. Direct drawing and fine-grained event handling are required.
+
+- **Solution:** Implement the `gpui::Element` trait for a custom struct. This provides access to the low-level rendering pipeline and event system.
+
+- **Key Learnings for `gpui::Element` Implementation:**
+  - **Struct Definition:** Define a struct (e.g., `ScrollbarElement`) to hold the component's data (e.g., `id`, `scroll_handle`).
+  - **`IntoElement` Trait:** Implement `IntoElement` for your custom struct, returning `Self`.
+  - **`Element` Trait Implementation:**
+    - **`id(&self) -> Option<ElementId>`:** Required. Returns the unique ID for the element.
+    - **`source_location(&self) -> Option<&'static std::panic::Location<'static>>`:** Required. Can return `None` for simple cases.
+    - **`request_layout(...)`:** Defines the element's layout properties. The `_inspector_id` parameter is `Option<&InspectorElementId>`.
+    - **`prepaint(...)`:** Calculates geometry and state needed for painting. The `_inspector_id` parameter is `Option<&InspectorElementId>`. Store calculated values in `Self::PrepaintState`.
+    - **`paint(...)`:** Performs the actual drawing and event handling.
+      - **Method Signature:** The `paint` method takes 8 parameters, including `_inspector_id: Option<&InspectorElementId>`, `_bounds: Bounds<Pixels>`, `_layout: &mut Self::RequestLayoutState`, `prepaint_state: &mut Self::PrepaintState`, `window: &mut Window`, and `cx: &mut App`.
+      - **Drawing:** Use `window.paint_quad(...)` with `gpui::quad(...)` to draw shapes.
+      - **State Management:** Use `window.use_keyed_state(self.id.clone(), cx, |_, _| { ... })` to create or retrieve persistent state for the element. This returns an `Entity<YourState>`.
+      - **Event Handling:** Use `window.on_mouse_event(move |event, phase, window, cx| { ... })` for fine-grained mouse interaction.
+      - **`cx.refresh()` vs. `window.refresh()`:** When updating state within an `Element`'s event handler, use `window.refresh()` to trigger a redraw.
+
+### 4. `ElementId` Creation
+
+- **Problem:** Creating unique `ElementId`s for components, especially when dynamically generated or nested, can be tricky.
+- **Solution:** `ElementId` implements `From` for several tuple types. The most reliable pattern for combining a static string with a dynamic identifier is `(static_str: &str, dynamic_id: usize)`.
+- **Incorrect Patterns:** Directly using `String` from `format!` or `(&str, &str)` tuples are not supported conversions for `ElementId`.
+
+### 5. Rust Ownership and Cloning in Closures
+
+- **Problem:** When using `move` closures, especially for event handlers, variables captured from the outer scope are moved into the closure. If multiple closures need the same non-`Copy` variable, only the first one can take ownership, leading to "use of moved value" errors.
+- **Solution:** For each `move` closure that needs a variable, create a `.clone()` of that variable _before_ the closure is defined. This ensures each closure receives its own independent copy, satisfying Rust's ownership rules.
+
+  ```rust
+  let original_var = ...;
+  // For Closure 1
+  let var_for_closure1 = original_var.clone();
+  window.on_mouse_event(move |...| { /* use var_for_closure1 */ });
+
+  // For Closure 2
+  let var_for_closure2 = original_var.clone();
+  window.on_mouse_event(move |...| { /* use var_for_closure2 */ });
+  ```
+
 This document contains the historical development notes and decision-making process that were previously in `ROADMAP.md`.
 
 ---
