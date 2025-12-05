@@ -599,6 +599,9 @@ fn main() {
         }
     }
 
+    // Sort themes alphabetically by name
+    all_themes.sort_by_key(|theme| theme.name.clone());
+
     Application::new().with_assets(Assets).run(move |cx: &mut App| {
         cx.bind_keys([
             KeyBinding::new("backspace", Backspace, Some("TextInput")),
