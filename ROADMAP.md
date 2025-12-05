@@ -234,10 +234,10 @@ This phase focuses on deepening the application's utility and polishing the visu
 ### 5. Dropdown Menu Ordering
 
 - **Description:** Implement consistent and user-friendly sorting for themes displayed in dropdown menus.
-- **Status:** `[ ] Not Started`
+- **Status:** [x] Completed
 - **Priority:** Medium
 - **Tasks:**
-  - [ ] Sort the combined list of themes (assets + user-loaded) alphabetically by theme name.
+  - [x] Sort the combined list of themes (assets + user-loaded) alphabetically by theme name.
 
 ### 6. Theme Hinting
 
