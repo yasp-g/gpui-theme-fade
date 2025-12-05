@@ -150,7 +150,7 @@ pub fn render_file_tree(theme: &InterpolatableTheme) -> impl IntoElement {
 
     // This container simulates the "ProjectPanel"
     div()
-        .w(Rems(15.0))
+        .w(Rems(12.0))
         .h_full()
         .flex()
         .flex_col()
