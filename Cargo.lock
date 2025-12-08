@@ -2123,7 +2123,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "gpui-test"
+name = "gpui-theme-fade"
 version = "0.1.0"
 dependencies = [
  "anyhow",
