@@ -1,5 +1,6 @@
 use crate::components::button::render_button;
 use crate::components::dropdown::render_dropdown;
+use crate::components::editor_preview::file_tree::render_file_tree;
 use crate::components::editor_preview::render_editor_preview;
 use crate::components::form_field::render_form_field;
 // use crate::components::gradient_bar::render_gradient_bar;
@@ -87,10 +88,10 @@ pub fn render_interactive_ui(
         .child(
             // Main Content
             div()
-                .h(px(700.0)) // Fixed height to ensure scrolling works
+                .h(px(600.0)) // Fixed height
                 .flex()
                 .gap_4()
-                .overflow_hidden() // Force children to respect available height
+                .overflow_hidden()
                 .child(div().w_64().flex_shrink_0().child(render_panel(
                     "left-panel",
                     rems(0.0).into(), // gap_0
@@ -202,17 +203,16 @@ pub fn render_interactive_ui(
                             .into_any_element(),
                     ],
                 )))
-                .child(div().flex_1().child(render_panel(
+                .child(div().flex_1().min_h_0().child(render_panel(
                     "right-panel",
-                    rems(0.0).into(), // No gap
+                    rems(1.0),
                     active_theme,
                     vec![render_editor_preview(
                         active_theme,
                         &view.file_tree_scroll_handle,
                         &view.editor_content_scroll_handle,
                         cx,
-                    )
-                    .into_any_element()],
+                    )],
                 ))),
         )
         .when(SHOW_THEME_HINT_FOOTER, |parent| {
