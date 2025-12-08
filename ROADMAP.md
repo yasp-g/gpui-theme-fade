@@ -376,7 +376,7 @@ This phase focuses on creating a realistic "Code Editor" preview to demonstrate 
 
 ## Phase 6: Editor Surface Polish
 
-This phase focuses on adding high-fidelity visual details to the editor preview to better support theme testing and validation.
+This phase focuses on adding high-fidelity visual details to the editor preview to better support theme testing and validation. Visual details should be emulated as closely as possible to Zed's native appearance (source code available at `sandbox/zed-source/zed/`)
 
 ### 1. Editor Scrollbars
 
@@ -384,8 +384,12 @@ This phase focuses on adding high-fidelity visual details to the editor preview 
 - **Status:** [ ] Pending
 - **Priority:** High
 - **Tasks:**
-  - [ ] Implement `render_scrollbar` component.
-  - [ ] Integrate scrollbars into `file_tree.rs` and `mod.rs` (main editor view).
+  - [ ] Create a reusable `ScrollableContainer` component by extracting the working pattern from `dropdown.rs`.
+  - [ ] Verify the new component compiles.
+  - [ ] Refactor `dropdown.rs` to use `ScrollableContainer` and verify it compiles.
+  - [ ] Implement `render_scrollbar` component (done).
+  - [ ] Integrate `ScrollableContainer` into `file_tree.rs`.
+  - [ ] Integrate `ScrollableContainer` into `mod.rs` (editor preview).
   - [ ] Apply theme keys: `scrollbar.thumb`, `scrollbar.track`, `scrollbar.thumb.hover`.
 
 ### 2. Active Line Highlight
@@ -457,3 +461,5 @@ This phase focuses on adding user control over simulation parameters and expandi
   - **Proposed Solution:** Bundle the font files in `assets/` and use GPUI's font loading API to make them available at startup.
 
 - **Background Scheduler Race Condition:** When closing the window with `Cmd+W`, the application process may persist, and the console may log `ERROR gpui: window not found`. This occurs because the background scheduler thread outlives the UI window and attempts to dispatch updates to a closed window. `Cmd+Q` avoids this by terminating the process immediately.
+
+- **Brittle Layout Constraints:** The "Editor Preview" pane currently relies on fixed-height constraints (e.g., 600px on the main container, 300px on the code area) to force internal components like the terminal and code editor to share space correctly and enable scrolling. This is a workaround for complex flexbox behavior in GPUI where nested `flex-grow` containers can expand indefinitely. While functional for this fixed-size demo, a robust implementation would require a complete refactor of the flex hierarchy to support fully responsive resizing.
