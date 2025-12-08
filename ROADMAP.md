@@ -350,7 +350,7 @@ This phase focuses on creating a realistic "Code Editor" preview to demonstrate 
 ### 8. Terminal Tab Integration
 
 - **Description:** Add a "Terminal" tab to the Editor Preview to demonstrate terminal-specific theme keys and provide a complete IDE feel. Using `Terminal.tsx`, `TerminalShell.tsx`, `TerminalTabs.tsx` files in `sandbox/zed-themes-source/zed-themes/app/components/preview/components/` as inspiration.
-- **Status:** [ ] Pending
+- **Status:** [x] Completed
 - **Priority:** High
 - **Tasks:**
   - [x] Create `src/components/editor_preview/terminal.rs`.
@@ -381,16 +381,16 @@ This phase focuses on adding high-fidelity visual details to the editor preview 
 ### 1. Editor Scrollbars
 
 - **Description:** Add visual scrollbars to the File Tree and Code Editor panes.
-- **Status:** [ ] Pending
+- **Status:** [x] Completed
 - **Priority:** High
 - **Tasks:**
-  - [ ] Create a reusable `ScrollableContainer` component by extracting the working pattern from `dropdown.rs`.
-  - [ ] Verify the new component compiles.
-  - [ ] Refactor `dropdown.rs` to use `ScrollableContainer` and verify it compiles.
-  - [ ] Implement `render_scrollbar` component (done).
-  - [ ] Integrate `ScrollableContainer` into `file_tree.rs`.
-  - [ ] Integrate `ScrollableContainer` into `mod.rs` (editor preview).
-  - [ ] Apply theme keys: `scrollbar.thumb`, `scrollbar.track`, `scrollbar.thumb.hover`.
+  - [x] Create a reusable `ScrollableContainer` component by extracting the working pattern from `dropdown.rs`.
+  - [x] Verify the new component compiles.
+  - [x] Refactor `dropdown.rs` to use `ScrollableContainer` and verify it compiles.
+  - [x] Implement `render_scrollbar` component (done).
+  - [x] Integrate `ScrollableContainer` into `file_tree.rs`.
+  - [x] Integrate `ScrollableContainer` into `mod.rs` (editor preview).
+  - [x] Apply theme keys: `scrollbar.thumb`, `scrollbar.track`, `scrollbar.thumb.hover`.
 
 ### 2. Active Line Highlight
 
