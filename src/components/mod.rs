@@ -5,4 +5,5 @@ pub mod form_field;
 pub mod gradient_bar;
 pub mod panel;
 pub mod popover;
+pub mod scrollable_container;
 pub mod scrollbar;

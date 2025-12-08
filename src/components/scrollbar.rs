@@ -97,11 +97,13 @@ impl Element for ScrollbarElement {
         window: &mut Window,
         cx: &mut App,
     ) -> (LayoutId, Self::RequestLayoutState) {
-        let style = Style {
-            position: Position::Absolute,
-            inset: gpui::Edges::default(),
-            ..Default::default()
-        };
+        let mut style = Style::default();
+        style.position = Position::Absolute;
+        style.inset.top = gpui::Length::Definite(px(0.0).into());
+        style.inset.bottom = gpui::Length::Definite(px(0.0).into());
+        style.inset.right = gpui::Length::Definite(px(0.0).into());
+        style.size.width = gpui::Length::Definite(px(12.0).into());
+
         (window.request_layout(style, None, cx), ())
     }
 
@@ -153,6 +155,13 @@ impl Element for ScrollbarElement {
         window: &mut Window,
         cx: &mut App,
     ) {
+        let scroll_track_bounds = self.scroll_handle.bounds();
+        let content_size = self.scroll_handle.max_offset() + scroll_track_bounds.size;
+        println!(
+            "Scrollbar Debug: ID: {:?}, Track Bounds: {:?}, Content Size: {:?}",
+            self.id, scroll_track_bounds, content_size
+        );
+
         if prepaint_state.scrollable_height.is_zero() {
             return;
         }

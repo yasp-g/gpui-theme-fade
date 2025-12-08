@@ -1,11 +1,14 @@
 use crate::{
     AppView,
-    components::{popover::render_popover, scrollbar::render_scrollbar},
+    components::{
+        popover::render_popover, scrollable_container::render_scrollable_container,
+        scrollbar::render_scrollbar,
+    },
     theme::{InterpolatableTheme, Theme},
 };
 use gpui::{
-    Context, FocusHandle, IntoElement, MouseDownEvent, ScrollHandle, Window, div, hsla, prelude::*,
-    ClickEvent,
+    ClickEvent, Context, FocusHandle, IntoElement, MouseDownEvent, ScrollHandle, Window, div, hsla,
+    prelude::*,
 };
 
 pub fn render_dropdown(
@@ -112,12 +115,10 @@ pub fn render_dropdown(
                         .shadow_lg()
                         .on_click(|_, _, app_context| app_context.stop_propagation())
                         .child(
-                            div()
-                                .id(scroll_container_id)
-                                .track_scroll(scroll_handle)
-                                .max_h_64() // Corresponds to `max-height: 16rem;` or 256px
-                                .overflow_y_scroll()
-                                .children(themes.iter().enumerate().map(|(index, theme_item)| {
+                            render_scrollable_container(
+                                scroll_container_id,
+                                scroll_handle,
+                                div().children(themes.iter().enumerate().map(|(index, theme_item)| {
                                     let on_select = on_select.clone();
                                     let is_disabled = disabled_indices.contains(&index);
 
@@ -137,6 +138,8 @@ pub fn render_dropdown(
                                         .when(is_disabled, |s| s.text_color(text_disabled_color))
                                         .child(theme_item.name.clone())
                                 })),
+                            )
+                            .max_h_64(), // Corresponds to `max-height: 16rem;` or 256px
                         )
                         .child(render_scrollbar(
                             (scroll_container_id, 1 as usize),
