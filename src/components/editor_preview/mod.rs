@@ -1,7 +1,7 @@
 use crate::AppView;
 use crate::components::scrollable_container::render_scrollable_container;
 use crate::theme::InterpolatableTheme;
-use gpui::{Context, IntoElement, Rems, SharedString, div, hsla, prelude::*, px};
+use gpui::{Context, IntoElement, Rems, div, hsla, prelude::*};
 
 pub mod breadcrumbs;
 pub mod file_tree;
