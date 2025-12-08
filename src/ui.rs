@@ -6,7 +6,7 @@ use crate::components::form_field::render_form_field;
 use crate::AppView;
 use crate::components::panel::render_panel;
 use crate::state::SimulationState;
-use gpui::{Context, IntoElement, div, prelude::*, rems};
+use gpui::{Context, IntoElement, div, prelude::*, px, rems};
 
 const SHOW_THEME_HINT_FOOTER: bool = true;
 
@@ -87,9 +87,10 @@ pub fn render_interactive_ui(
         .child(
             // Main Content
             div()
-                .flex_1()
+                .h(px(700.0)) // Fixed height to ensure scrolling works
                 .flex()
                 .gap_4()
+                .overflow_hidden() // Force children to respect available height
                 .child(div().w_64().flex_shrink_0().child(render_panel(
                     "left-panel",
                     rems(0.0).into(), // gap_0
@@ -205,7 +206,13 @@ pub fn render_interactive_ui(
                     "right-panel",
                     rems(0.0).into(), // No gap
                     active_theme,
-                    vec![render_editor_preview(active_theme, cx).into_any_element()],
+                    vec![render_editor_preview(
+                        active_theme,
+                        &view.file_tree_scroll_handle,
+                        &view.editor_content_scroll_handle,
+                        cx,
+                    )
+                    .into_any_element()],
                 ))),
         )
         .when(SHOW_THEME_HINT_FOOTER, |parent| {
