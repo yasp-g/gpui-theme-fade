@@ -438,6 +438,16 @@ This phase focuses on adding high-fidelity visual details to the editor preview 
   - [ ] Position it at the end of the "active" line or selection.
   - [ ] Apply theme key: `editor.active_line_number` (or standard cursor color).
 
+### 7. Refactor Editor Preview Modules
+
+- **Description:** Split the unwieldy `mod.rs` into dedicated modules for better maintainability (`dummy_data.rs`, `editor_pane.rs`).
+- **Status:** [ ] Pending
+- **Priority:** Medium
+- **Tasks:**
+  - [ ] Extract `Token` and `get_example_code` to `src/components/editor_preview/dummy_data.rs`.
+  - [ ] Extract `render_editor_pane` and `render_tab` to `src/components/editor_preview/editor_pane.rs`.
+  - [ ] Clean up `src/components/editor_preview/mod.rs` to coordinate the sub-modules.
+
 ## Phase 7: Simulation Control & Preview Enhancements
 
 This phase focuses on adding user control over simulation parameters and expanding the editor preview with more realistic features.
