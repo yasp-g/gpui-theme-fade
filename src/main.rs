@@ -133,6 +133,8 @@ pub struct AppView {
     pub run_simulation_focus_handle: FocusHandle,
     pub root_focus_handle: FocusHandle,
     pub simulation_state: SimulationState,
+    pub file_tree_scroll_handle: ScrollHandle,
+    pub editor_content_scroll_handle: ScrollHandle,
 }
 
 impl AppView {
@@ -163,6 +165,8 @@ impl AppView {
             run_simulation_focus_handle: cx.focus_handle().tab_index(6).tab_stop(true),
             root_focus_handle,
             simulation_state: SimulationState::Idle,
+            file_tree_scroll_handle: ScrollHandle::new(),
+            editor_content_scroll_handle: ScrollHandle::new(),
         }
     }
 

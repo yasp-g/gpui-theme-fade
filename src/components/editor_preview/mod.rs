@@ -1,6 +1,7 @@
-use crate::theme::InterpolatableTheme;
 use crate::AppView;
-use gpui::{div, hsla, prelude::*, Context, IntoElement, Rems, SharedString};
+use crate::components::scrollable_container::render_scrollable_container;
+use crate::theme::InterpolatableTheme;
+use gpui::{Context, IntoElement, Rems, SharedString, div, hsla, prelude::*, px};
 
 pub mod breadcrumbs;
 pub mod file_tree;
@@ -12,6 +13,7 @@ use file_tree::render_file_tree;
 use status_bar::render_status_bar;
 use terminal::render_terminal;
 
+#[derive(Clone, Copy)]
 struct Token {
     text: &'static str,
     syntax: &'static str,
@@ -37,122 +39,289 @@ impl Token {
 }
 
 fn get_example_code() -> Vec<Vec<Token>> {
-    vec![
-        // Line 1: use std::collections::HashMap;
-        vec![
-            Token::new("use", "keyword"),
-            Token::new(" ", "text"),
-            Token::new("std", "variable"),
-            Token::new("::", "punctuation.delimiter"),
-            Token::new("collections", "variable"),
-            Token::new("::", "punctuation.delimiter"),
-            Token::new("HashMap", "type"),
-            Token::new(";", "punctuation.delimiter"),
-        ],
-        // Line 2:
-        vec![],
-        // Line 3: struct User {
-        vec![
-            Token::new("struct", "keyword"),
-            Token::new(" ", "text"),
-            Token::new("User", "type"),
-            Token::new(" ", "text"),
-            Token::new("{", "punctuation.bracket"),
-        ],
-        // Line 4:     id: usize,
-        vec![
-            Token::new("    ", "text"),
-            Token::new("id", "property"),
-            Token::new(":", "punctuation.delimiter"),
-            Token::new(" ", "text"),
-            Token::new("usize", "type"),
-            Token::new(",", "punctuation.delimiter"),
-        ],
-        // Line 5:     name: String,
-        vec![
-            Token::new("    ", "text"),
-            Token::new("name", "property"),
-            Token::new(":", "punctuation.delimiter"),
-            Token::new(" ", "text"),
-            Token::new("String", "type"),
-            Token::new(",", "punctuation.delimiter"),
-        ],
-        // Line 6:
-        vec![Token::new("}", "punctuation.bracket")],
-        // Line 7:
-        vec![],
-        // Line 8: fn main() {
-        vec![
-            Token::new("fn", "keyword"),
-            Token::new(" ", "text"),
-            Token::new("main", "function"),
-            Token::new("()", "punctuation.bracket"),
-            Token::new(" ", "text"),
-            Token::new("{", "punctuation.bracket"),
-        ],
-        // Line 9:     let user = User {
-        vec![
-            Token::new("    ", "text"),
-            Token::new("let", "keyword"),
-            Token::new(" ", "text"),
-            Token::new("user", "variable"),
-            Token::new(" ", "text"),
-            Token::new("=", "operator"),
-            Token::new(" ", "text"),
-            Token::new("User", "type"),
-            Token::new(" ", "text"),
-            Token::new("{", "punctuation.bracket"),
-        ],
-        // Line 10:
-        vec![
-            Token::new("        ", "text"),
-            Token::new("id", "property"),
-            Token::new(":", "punctuation.delimiter"),
-            Token::new(" ", "text"),
-            Token::error("\"oops\"", "string"), // Simulated Error
-            Token::new(",", "punctuation.delimiter"),
-        ],
-        // Line 11:
-        vec![
-            Token::new("        ", "text"),
-            Token::new("name", "property"),
-            Token::new(":", "punctuation.delimiter"),
-            Token::new(" ", "text"),
-            Token::new("\"", "string"),
-            Token::new("Alice", "string"),
-            Token::new("\"", "string"),
-            Token::new(".", "punctuation.delimiter"),
-            Token::new("to_string", "function"),
-            Token::new("()", "punctuation.bracket"),
-            Token::new(",", "punctuation.delimiter"),
-        ],
-        // Line 12:
-        vec![
-            Token::new("    ", "text"),
-            Token::new("}", "punctuation.bracket"),
-            Token::new(";", "punctuation.delimiter"),
-        ],
-        // Line 13:
-        vec![
-            Token::new("    ", "text"),
-            Token::new("println!", "function"),
-            Token::new("(", "punctuation.bracket"),
-            Token::new("\"", "string"),
-            Token::new("Hello, {}!", "string"),
-            Token::new("\"", "string"),
-            Token::new(", ", "punctuation.delimiter"),
-            Token::new("user", "variable"),
-            Token::new(".", "punctuation.delimiter"),
-            Token::new("name", "property"),
-            Token::new(");", "punctuation.bracket"),
-        ],
-        // Line 14:
-        vec![Token::new("}", "punctuation.bracket")],
-    ]
+    let mut lines = Vec::new();
+
+    // Line 1: use std::collections::HashMap;
+    lines.push(vec![
+        Token::new("use", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("std", "variable"),
+        Token::new("::", "punctuation.delimiter"),
+        Token::new("collections", "variable"),
+        Token::new("::", "punctuation.delimiter"),
+        Token::new("HashMap", "type"),
+        Token::new(";", "punctuation.delimiter"),
+    ]);
+    lines.push(vec![]);
+
+    // Enum Definition
+    lines.push(vec![
+        Token::new("enum", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("ThemeState", "type"),
+        Token::new(" ", "text"),
+        Token::new("{", "punctuation.bracket"),
+    ]);
+    lines.push(vec![
+        Token::new("    ", "text"),
+        Token::new("Loading", "variant"),
+        Token::new(",", "punctuation.delimiter"),
+    ]);
+    lines.push(vec![
+        Token::new("    ", "text"),
+        Token::new("Active", "variant"),
+        Token::new("(", "punctuation.bracket"),
+        Token::new("Theme", "type"),
+        Token::new(")", "punctuation.bracket"),
+        Token::new(",", "punctuation.delimiter"),
+    ]);
+    lines.push(vec![
+        Token::new("    ", "text"),
+        Token::new("Error", "variant"),
+        Token::new("{", "punctuation.bracket"),
+        Token::new(" ", "text"),
+        Token::new("msg", "property"),
+        Token::new(":", "punctuation.delimiter"),
+        Token::new(" ", "text"),
+        Token::new("String", "type"),
+        Token::new(" ", "text"),
+        Token::new("}", "punctuation.bracket"),
+        Token::new(",", "punctuation.delimiter"),
+    ]);
+    lines.push(vec![Token::new("}", "punctuation.bracket")]);
+    lines.push(vec![]);
+
+    // Function Definition
+    lines.push(vec![
+        Token::new("fn", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("apply_theme", "function"),
+        Token::new("(", "punctuation.bracket"),
+        Token::new("state", "variable"),
+        Token::new(":", "punctuation.delimiter"),
+        Token::new(" ", "text"),
+        Token::new("&", "operator"),
+        Token::new("mut", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("ThemeState", "type"),
+        Token::new(")", "punctuation.bracket"),
+        Token::new(" ", "text"),
+        Token::new("->", "operator"),
+        Token::new(" ", "text"),
+        Token::new("Result", "type"),
+        Token::new("<", "punctuation.bracket"),
+        Token::new("()", "punctuation.bracket"),
+        Token::new(">", "operator"),
+        Token::new(" ", "text"),
+        Token::new("{", "punctuation.bracket"),
+    ]);
+
+    // Match statement
+    lines.push(vec![
+        Token::new("    ", "text"),
+        Token::new("match", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("state", "variable"),
+        Token::new(" ", "text"),
+        Token::new("{", "punctuation.bracket"),
+    ]);
+    lines.push(vec![
+        Token::new("        ", "text"),
+        Token::new("ThemeState", "type"),
+        Token::new("::", "punctuation.delimiter"),
+        Token::new("Active", "variant"),
+        Token::new("(", "punctuation.bracket"),
+        Token::new("theme", "variable"),
+        Token::new(")", "punctuation.bracket"),
+        Token::new(" ", "text"),
+        Token::new("=>", "operator"),
+        Token::new(" ", "text"),
+        Token::new("{", "punctuation.bracket"),
+    ]);
+    lines.push(vec![
+        Token::new("            ", "text"),
+        Token::new("println!", "function"),
+        Token::new("(", "punctuation.bracket"),
+        Token::new("\"", "string"),
+        Token::new("Applying theme: {}", "string"),
+        Token::new("\"", "string"),
+        Token::new(",", "punctuation.delimiter"),
+        Token::new(" ", "text"),
+        Token::new("theme", "variable"),
+        Token::new(".", "punctuation.delimiter"),
+        Token::new("name", "property"),
+        Token::new(")", "punctuation.bracket"),
+        Token::new(";", "punctuation.delimiter"),
+    ]);
+    lines.push(vec![
+        Token::new("        ", "text"),
+        Token::new("}", "punctuation.bracket"),
+        Token::new(",", "punctuation.delimiter"),
+    ]);
+    lines.push(vec![
+        Token::new("        ", "text"),
+        Token::new("_", "variable"),
+        Token::new(" ", "text"),
+        Token::new("=>", "operator"),
+        Token::new(" ", "text"),
+        Token::new("return", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("Err", "variant"),
+        Token::new("(", "punctuation.bracket"),
+        Token::new("anyhow!", "function"),
+        Token::new("(", "punctuation.bracket"),
+        Token::new("\"", "string"),
+        Token::new("Invalid state", "string"),
+        Token::new("\"", "string"),
+        Token::new(")", "punctuation.bracket"),
+        Token::new(")", "punctuation.bracket"),
+        Token::new(",", "punctuation.delimiter"),
+    ]);
+    lines.push(vec![
+        Token::new("    ", "text"),
+        Token::new("}", "punctuation.bracket"),
+    ]);
+    lines.push(vec![
+        Token::new("    ", "text"),
+        Token::new("Ok", "variant"),
+        Token::new("(", "punctuation.bracket"),
+        Token::new("()", "punctuation.bracket"),
+        Token::new(")", "punctuation.bracket"),
+    ]);
+    lines.push(vec![Token::new("}", "punctuation.bracket")]);
+    lines.push(vec![]);
+
+    // Struct definition
+    lines.push(vec![Token::new("#[derive(Debug, Clone)]", "attribute")]);
+    lines.push(vec![
+        Token::new("struct", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("Config", "type"),
+        Token::new(" ", "text"),
+        Token::new("{", "punctuation.bracket"),
+    ]);
+    lines.push(vec![
+        Token::new("    ", "text"),
+        Token::new("pub", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("opacity", "property"),
+        Token::new(":", "punctuation.delimiter"),
+        Token::new(" ", "text"),
+        Token::new("f32", "type"),
+        Token::new(",", "punctuation.delimiter"),
+    ]);
+    lines.push(vec![
+        Token::new("    ", "text"),
+        Token::new("pub", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("retries", "property"),
+        Token::new(":", "punctuation.delimiter"),
+        Token::new(" ", "text"),
+        Token::new("usize", "type"),
+        Token::new(",", "punctuation.delimiter"),
+    ]);
+    lines.push(vec![Token::new("}", "punctuation.bracket")]);
+    lines.push(vec![]);
+
+    // Main with loop
+    lines.push(vec![
+        Token::new("fn", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("main", "function"),
+        Token::new("()", "punctuation.bracket"),
+        Token::new(" ", "text"),
+        Token::new("{", "punctuation.bracket"),
+    ]);
+    lines.push(vec![
+        Token::new("    ", "text"),
+        Token::new("// Initialize configuration", "comment"),
+    ]);
+    lines.push(vec![
+        Token::new("    ", "text"),
+        Token::new("let", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("config", "variable"),
+        Token::new(" ", "text"),
+        Token::new("=", "operator"),
+        Token::new(" ", "text"),
+        Token::new("Config", "type"),
+        Token::new(" ", "text"),
+        Token::new("{", "punctuation.bracket"),
+        Token::new(" ", "text"),
+        Token::new("opacity", "property"),
+        Token::new(":", "punctuation.delimiter"),
+        Token::new(" ", "text"),
+        Token::new("1.0", "number"),
+        Token::new(",", "punctuation.delimiter"),
+        Token::new(" ", "text"),
+        Token::new("retries", "property"),
+        Token::new(":", "punctuation.delimiter"),
+        Token::new(" ", "text"),
+        Token::new("3", "number"),
+        Token::new(" ", "text"),
+        Token::new("}", "punctuation.bracket"),
+        Token::new(";", "punctuation.delimiter"),
+    ]);
+    lines.push(vec![]);
+    lines.push(vec![
+        Token::new("    ", "text"),
+        Token::new("for", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("i", "variable"),
+        Token::new(" ", "text"),
+        Token::new("in", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("0", "number"),
+        Token::new("..", "operator"),
+        Token::new("config", "variable"),
+        Token::new(".", "punctuation.delimiter"),
+        Token::new("retries", "property"),
+        Token::new(" ", "text"),
+        Token::new("{", "punctuation.bracket"),
+    ]);
+    lines.push(vec![
+        Token::new("        ", "text"),
+        Token::new("if", "keyword"),
+        Token::new(" ", "text"),
+        Token::new("i", "variable"),
+        Token::new(" ", "text"),
+        Token::new(">", "operator"),
+        Token::new(" ", "text"),
+        Token::new("0", "number"),
+        Token::new(" ", "text"),
+        Token::new("{", "punctuation.bracket"),
+    ]);
+    lines.push(vec![
+        Token::new("            ", "text"),
+        Token::new("println!", "function"),
+        Token::new("(", "punctuation.bracket"),
+        Token::new("\"", "string"),
+        Token::new("Retrying...", "string"),
+        Token::new("\"", "string"),
+        Token::new(")", "punctuation.bracket"),
+        Token::new(";", "punctuation.delimiter"),
+    ]);
+    lines.push(vec![
+        Token::new("        ", "text"),
+        Token::new("}", "punctuation.bracket"),
+    ]);
+    lines.push(vec![
+        Token::new("    ", "text"),
+        Token::new("}", "punctuation.bracket"),
+    ]);
+    lines.push(vec![Token::new("}", "punctuation.bracket")]);
+
+    // Duplicate to ensure it's long enough to scroll even on large screens
+    let mut full_code = lines.clone();
+    full_code.extend(lines);
+
+    full_code
 }
 
 pub fn render_editor_preview(
     theme: &InterpolatableTheme,
+    file_tree_scroll_handle: &gpui::ScrollHandle,
+    editor_content_scroll_handle: &gpui::ScrollHandle,
     cx: &mut Context<AppView>,
 ) -> impl IntoElement {
     let editor_bg = theme
@@ -171,10 +340,7 @@ pub fn render_editor_preview(
         .0
         .get("tab.inactive_background")
         .map_or(tab_bar_bg, |c| c.hsla);
-    let text_color = theme
-        .0
-        .get("text")
-        .map_or(hsla(0., 0., 1., 1.), |c| c.hsla);
+    let text_color = theme.0.get("text").map_or(hsla(0., 0., 1., 1.), |c| c.hsla);
     let line_number_color = theme
         .0
         .get("editor.line_number")
@@ -204,7 +370,9 @@ pub fn render_editor_preview(
             div()
                 .flex()
                 .flex_1()
-                .child(render_file_tree(theme)) // Sidebar
+                .overflow_hidden() // This constrains the container
+                .min_h_0() // This allows the container to shrink below content size
+                .child(render_file_tree(theme, file_tree_scroll_handle)) // Sidebar
                 .child(
                     // Editor Column
                     div()
@@ -227,7 +395,9 @@ pub fn render_editor_preview(
                             // Editor Area (Gutter + Code)
                             div()
                                 .flex()
-                                .flex_1()
+                                .flex_1() // Allow it to take flex space
+                                .min_h_0() // Allow shrinking
+                                .relative()
                                 .child(
                                     // Gutter
                                     div()
@@ -248,39 +418,60 @@ pub fn render_editor_preview(
                                 )
                                 .child(
                                     // Code Content
-                                    div()
-                                        .flex_1()
-                                        .p_2()
-                                        .text_sm()
-                                        .text_color(text_color)
-                                        .font_family("Menlo")
-                                        .children(code_lines.into_iter().map(|tokens| {
-                                            div()
-                                                .h(Rems(1.25))
-                                                .flex()
-                                                .children(tokens.into_iter().map(|token| {
-                                                    let color = if token.syntax == "text" {
-                                                        text_color
-                                                    } else {
-                                                        let key = format!("syntax.{}", token.syntax);
-                                                        theme
-                                                            .0
-                                                            .get(&key)
-                                                            .or_else(|| theme.0
-                                                                .get(&format!("{}.color", key)))
-                                                            .map(|c| c.hsla)
-                                                            .unwrap_or(text_color)
-                                                    };
-                                                    div()
-                                                        .text_color(color)
-                                                        .when(token.is_error, |s| {
-                                                            s.text_decoration_1()
-                                                                .text_decoration_color(error_color)
-                                                                .text_decoration_wavy()
-                                                        })
-                                                        .child(token.text)
-                                                }))
-                                        })),
+                                    render_scrollable_container(
+                                        "editor-content-scroll-container",
+                                        editor_content_scroll_handle,
+                                        div()
+                                            .flex_1()
+                                            // .h_full() // Removed to allow content to exceed container height
+                                            .p_2()
+                                            .text_sm()
+                                            .text_color(text_color)
+                                            .font_family("Menlo")
+                                            .children(code_lines.into_iter().map(|tokens| {
+                                                div().h(Rems(1.25)).flex().children(
+                                                    tokens.into_iter().map(|token| {
+                                                        let color = if token.syntax == "text" {
+                                                            text_color
+                                                        } else {
+                                                            let key =
+                                                                format!("syntax.{}", token.syntax);
+                                                            theme
+                                                                .0
+                                                                .get(&key)
+                                                                .or_else(|| {
+                                                                    theme.0.get(&format!(
+                                                                        "{}.color",
+                                                                        key
+                                                                    ))
+                                                                })
+                                                                .map(|c| c.hsla)
+                                                                .unwrap_or(text_color)
+                                                        };
+                                                        div()
+                                                            .text_color(color)
+                                                            .when(token.is_error, |s| {
+                                                                s.text_decoration_1()
+                                                                    .text_decoration_color(
+                                                                        error_color,
+                                                                    )
+                                                                    .text_decoration_wavy()
+                                                            })
+                                                            .child(token.text)
+                                                    }),
+                                                )
+                                            })),
+                                    )
+                                    .size_full()
+                                    .max_h_full(),
+                                )
+                                .child(
+                                    // The scrollbar component for editor content
+                                    crate::components::scrollbar::render_scrollbar(
+                                        "editor-content-scrollbar",
+                                        editor_content_scroll_handle,
+                                        theme,
+                                    ),
                                 ),
                         )
                         .child(render_terminal(theme, cx)),
@@ -288,7 +479,6 @@ pub fn render_editor_preview(
         )
         .child(render_status_bar(theme)) // Status Bar at bottom
 }
-
 
 fn render_tab(
     name: impl Into<gpui::SharedString>,

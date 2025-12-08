@@ -1,3 +1,4 @@
+use crate::components::scrollable_container::render_scrollable_container;
 use crate::theme::InterpolatableTheme;
 use gpui::{IntoElement, Rems, div, hsla, prelude::*, px};
 
@@ -137,7 +138,10 @@ fn get_example_files() -> Vec<FileItem> {
     ]
 }
 
-pub fn render_file_tree(theme: &InterpolatableTheme) -> impl IntoElement {
+pub fn render_file_tree(
+    theme: &InterpolatableTheme,
+    scroll_handle: &gpui::ScrollHandle,
+) -> impl IntoElement {
     let bg_color = theme
         .0
         .get("sidebar.background")
@@ -150,20 +154,36 @@ pub fn render_file_tree(theme: &InterpolatableTheme) -> impl IntoElement {
 
     // This container simulates the "ProjectPanel"
     div()
+        .relative() // Required for absolutely positioned scrollbar
         .w(Rems(12.0))
         .h_full()
-        .flex()
-        .flex_col()
-        .bg(bg_color)
-        .text_color(text_color)
-        .text_sm()
-        .pt_2() // Top padding only, no horizontal padding
+        .min_h_0()
+        .child(render_scrollable_container(
+            "file-tree-scroll-container", // New ID for the scrollable content
+            scroll_handle,
+            div()
+                .size_full()
+                .flex()
+                .flex_col()
+                .bg(bg_color)
+                .text_color(text_color)
+                .text_sm()
+                .pt_2() // Top padding only, no horizontal padding
+                .child(
+                    // We simulate the UniformList by just stacking divs
+                    div().flex().flex_col().children(
+                        get_example_files()
+                            .into_iter()
+                            .map(|file| render_file_item(file, theme)),
+                    ),
+                ),
+        ).size_full())
         .child(
-            // We simulate the UniformList by just stacking divs
-            div().flex().flex_col().children(
-                get_example_files()
-                    .into_iter()
-                    .map(|file| render_file_item(file, theme)),
+            // The scrollbar component
+            crate::components::scrollbar::render_scrollbar(
+                "file-tree-scrollbar",
+                scroll_handle,
+                theme,
             ),
         )
 }

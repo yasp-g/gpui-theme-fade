@@ -9,6 +9,7 @@ pub fn render_terminal(theme: &InterpolatableTheme, _cx: &mut Context<AppView>) 
         .map_or(hsla(0., 0., 0., 1.), |c| c.hsla);
 
     div()
+        .h(gpui::px(200.0)) // Fixed height for terminal
         .flex()
         .flex_col()
         .border_t_1()
