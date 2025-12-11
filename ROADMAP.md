@@ -404,11 +404,11 @@ This phase focuses on adding high-fidelity visual details to the editor preview 
 ### 3. Text Selection
 
 - **Description:** Simulate text selection to verify contrast against syntax highlighting.
-- **Status:** [ ] Pending
+- **Status:** [x] Skipped (Conflict with Active Line Highlight)
 - **Priority:** High
 - **Tasks:**
-  - [ ] Overlay a selection rectangle on a portion of the code (e.g., "User" in line 9).
-  - [ ] Apply theme key: `selection.background`.
+  - [x] Overlay a selection rectangle on a portion of the code (e.g., "User" in line 9).
+  - [x] Apply theme key: `selection.background`.
 
 ### 4. Editor Indent Guides
 
