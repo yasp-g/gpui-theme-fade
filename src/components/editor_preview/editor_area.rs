@@ -3,7 +3,7 @@ use crate::theme::InterpolatableTheme;
 use gpui::{div, hsla, prelude::*, IntoElement, Rems, px};
 // Removed breadcrumbs import
 use super::dummy_data::get_example_code;
-use super::dummy_data::Token; // Import Token
+ // Import Token
 
 // Renamed from render_editor_pane
 pub fn render_editor_area(
