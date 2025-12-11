@@ -395,11 +395,11 @@ This phase focuses on adding high-fidelity visual details to the editor preview 
 ### 2. Active Line Highlight
 
 - **Description:** Highlight the background of the currently active line in the editor.
-- **Status:** [ ] Pending
+- **Status:** [x] Completed
 - **Priority:** High
 - **Tasks:**
-  - [ ] Update `mod.rs` to render a background highlight for the "active" line (e.g., line 10).
-  - [ ] Apply theme key: `editor.active_line_background`.
+  - [x] Update `mod.rs` to render a background highlight for the "active" line (e.g., line 10).
+  - [x] Apply theme key: `editor.active_line.background`.
 
 ### 3. Text Selection
 
