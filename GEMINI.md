@@ -51,6 +51,7 @@ To ensure clarity and alignment, the `ROADMAP.md` file will serve as the single 
 - **Keeping it Current:** As tasks are completed, their corresponding checkboxes (`- [ ]`) must be marked as done (`- [x]`). The "Last Updated" date should also be updated periodically.
 - **Verify Before Documenting:** All changes to documentation, especially updating task statuses in `ROADMAP.md`, must only occur _after_ the corresponding code changes have been verified by running the application or tests and confirming the fix/feature works as expected.
 - **Git Commits Required:** Never begin a new task in `ROADMAP.md` without making git commits to track progress. Working in a systematic, step-by-step approach that avoids a 'do it all at once' situation is critical.
+- **Step-by-Step Approach:** Working in an organized and systematic manner, each task should be completed one at a time, ensuring that each step is thoroughly tested before moving on to the next. This helps prevent issues from snowballing and makes it easier to identify and fix problems. After completing a task in the roadmap, wait for the next task to be assigned before proceeding.
 
 This process ensures that we always have a clear, up-to-date view of the project's status and direction.
 
